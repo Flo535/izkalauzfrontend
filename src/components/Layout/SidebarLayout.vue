@@ -1,0 +1,185 @@
+<template>
+  <div class="layout">
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar desktop">
+      <nav>
+        <ul>
+          <li><router-link to="/">🏠 Kezdőlap</router-link></li>
+          <li><router-link to="/receptek">🍽 Receptek</router-link></li>
+          <li><router-link to="/kedvencek">❤️ Kedvencek</router-link></li>
+          <li><router-link to="/vasarlas">🛒 Bevásárlólista</router-link></li>
+          <li><router-link to="/menu">📅 Heti Menü</router-link></li>
+          <li><router-link to="/profile">👤 Profil</router-link></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- MOBILE HAMBURGER -->
+    <button class="mobile-menu-btn" @click="isOpen = !isOpen">☰</button>
+
+    <!-- MOBILE SIDEBAR PANEL -->
+    <transition name="slide-up">
+      <aside v-if="isOpen" class="sidebar mobile">
+        <button class="close-btn" @click="isOpen = false">✕</button>
+        <nav>
+          <ul>
+            <li><router-link @click="isOpen = false" to="/">🏠 Kezdőlap</router-link></li>
+            <li><router-link @click="isOpen = false" to="/receptek">🍽 Receptek</router-link></li>
+            <li><router-link @click="isOpen = false" to="/kedvencek">❤️ Kedvencek</router-link></li>
+            <li><router-link @click="isOpen = false" to="/vasarlas">🛒 Bevásárlólista</router-link></li>
+            <li><router-link @click="isOpen = false" to="/menu">📅 Heti Menü</router-link></li>
+            <li><router-link @click="isOpen = false" to="/profile">👤 Profil</router-link></li>
+          </ul>
+        </nav>
+      </aside>
+    </transition>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-area">
+      <div class="main-content glass-box">
+        <slot />
+      </div>
+    </main>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "SidebarLayout",
+  data() {
+    return {
+      isOpen: false
+    };
+  }
+};
+</script>
+
+<style scoped>
+.layout {
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - 70px); /* header alatt kezdődik */
+  position: relative;
+  margin-top: 70px; /* header magassága */
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* SIDEBAR COMMON */
+.sidebar {
+  padding: 20px;
+  background: rgba(247, 243, 238, 0.85);
+  backdrop-filter: blur(10px);
+  color: #3B3B3B;
+  border-radius: 12px;
+  z-index: 1000;
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar li {
+  margin: 14px 0;
+}
+
+.sidebar a {
+  color: #3B3B3B;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: block;
+}
+
+.sidebar a:hover {
+  background: rgba(237, 227, 218, 0.6);
+}
+
+/* DESKTOP SIDEBAR */
+.sidebar.desktop {
+  width: 240px;
+  min-height: 100%;
+  box-shadow: 4px 0 12px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+/* MAIN CONTENT */
+.main-area {
+  flex: 1;
+  padding: 20px;
+}
+
+.glass-box {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(6px);
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+/* MOBILE HAMBURGER BUTTON */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* MOBILE SIDEBAR PANEL */
+.sidebar.mobile {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 250px;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  float: right;
+  cursor: pointer;
+}
+
+/* SLIDE UP TRANSITION */
+.slide-up-enter-active, .slide-up-leave-active {
+  transition: transform 0.3s ease;
+}
+.slide-up-enter {
+  transform: translateY(100%);
+}
+.slide-up-leave-to {
+  transform: translateY(100%);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .sidebar.desktop {
+    display: none;
+  }
+
+  .mobile-menu-btn {
+    display: block;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1100;
+    background: rgba(247,243,238,0.95);
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.6rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* ===== CONTENT OFFSET (Navbar alá ne csússzon) ===== */
+  .main-area {
+    flex: 1;
+    padding: 20px;
+    margin-top: 70px; /* ✅ hozzáadva */
+  }
+
+}
+</style>
