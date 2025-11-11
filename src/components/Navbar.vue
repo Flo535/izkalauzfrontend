@@ -12,7 +12,7 @@
     <!-- Menüelemek -->
     <ul :class="['nav-links', { open: isOpen }]">
       <li><router-link to="/" @click="closeMenu">Főoldal</router-link></li>
-      <li><router-link to="/recipes" @click="closeMenu">Receptek</router-link></li>
+      <li><router-link to="/recipes" @click="closeMenu">🍽 Receptek</router-link></li>
       <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">Bejelentkezés</router-link></li>
       <li v-if="!isLoggedIn"><router-link to="/register" @click="closeMenu">Regisztráció</router-link></li>
       <li v-if="isLoggedIn"><router-link to="/profile" @click="closeMenu">Profil</router-link></li>

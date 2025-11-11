@@ -1,41 +1,31 @@
-// src/axios.js
 import axios from 'axios'
-import router from './router'
 
-// 🔹 Axios példány létrehozása
+// Axios példány a proxyhoz
 const api = axios.create({
-  baseURL: '/api', //  proxy-n keresztül megy, nem közvetlenül
-  withCredentials: true,
+  baseURL: '/api', // proxy-n keresztül megy
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true
 })
 
-// 🔹 Globális kérés számláló (loading kezeléshez)
-let activeRequests = 0
-
-const showLoading = () => document.body.classList.add('loading')
-const hideLoading = () => document.body.classList.remove('loading')
-
-// 🔹 Token automatikus hozzáadása
+// Token automatikus hozzáadása
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
-// 🔹 Hiba kezelés
+// Globális hiba kezelés
 api.interceptors.response.use(
   response => response,
   error => {
-    if (error.response && error.response.status === 401) {
+    if (error.response?.status === 401) {
       console.warn('⛔ Token lejárt vagy érvénytelen. Kijelentkeztetés...')
       localStorage.removeItem('token')
       window.location.href = '/login'
     } else if (!error.response) {
-      alert('⚠️ A szerver nem válaszol. Kérlek próbáld meg később.')
+      alert('⚠️ A szerver nem válaszol. Próbáld meg később.')
     }
     return Promise.reject(error)
   }

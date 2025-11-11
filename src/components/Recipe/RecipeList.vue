@@ -13,13 +13,18 @@
     <div v-if="error" class="error">{{ error }}</div>
     <div v-else-if="loading" class="loading">Betöltés...</div>
 
-    <!-- Csak bejelentkezve, Új recept form -->
+    <!-- Új recept hozzáadása -->
     <transition name="fade">
       <div v-if="showAddForm && isLoggedIn" class="add-form">
         <h3>Új recept hozzáadása</h3>
         <form @submit.prevent="addRecipe">
-          <input v-model="newRecipe.name" type="text" placeholder="Recept neve" required />
+          <input v-model="newRecipe.title" type="text" placeholder="Recept címe" required />
           <textarea v-model="newRecipe.description" placeholder="Leírás" required></textarea>
+          <input
+            v-model="newRecipe.ingredients"
+            type="text"
+            placeholder="Hozzávalók (vesszővel elválasztva)"
+          />
           <div class="form-buttons">
             <button type="submit" class="save">Mentés</button>
             <button type="button" class="cancel" @click="toggleAddMode">Mégse</button>
@@ -36,22 +41,36 @@
 
     <!-- Recept lista -->
     <transition-group name="fade" tag="ul" class="recipe-list">
-      <li v-for="recipe in recipes" :key="recipe.id" class="recipe-item">
-        <div v-if="editingId === recipe.id" class="edit-form">
-          <input v-model="editingRecipe.name" type="text" />
+      <li v-for="recipe in recipes" :key="recipe.id || recipe.Id" class="recipe-item">
+        <div v-if="editingId === (recipe.id || recipe.Id)" class="edit-form">
+          <input v-model="editingRecipe.title" type="text" />
           <textarea v-model="editingRecipe.description"></textarea>
+          <input v-model="editingRecipe.ingredients" type="text" />
           <div class="form-buttons">
-            <button @click="updateRecipe(recipe.id)" class="save">Mentés</button>
+            <button @click="updateRecipe(recipe.id || recipe.Id)" class="save">Mentés</button>
             <button @click="cancelEdit" class="cancel">Mégse</button>
           </div>
         </div>
 
         <div v-else class="recipe-card">
-          <h3>{{ recipe.name }}</h3>
+          <h3>{{ recipe.title }}</h3>
           <p>{{ recipe.description }}</p>
+
+          <!-- Hozzávalók -->
+          <p v-if="recipe.ingredients && recipe.ingredients.length">
+            <strong>Hozzávalók:</strong>
+            {{ Array.isArray(recipe.ingredients)
+              ? recipe.ingredients.join(", ")
+              : recipe.ingredients }}
+          </p>
+
+          <p v-if="recipe.authorEmail" class="author">
+            👩‍🍳 <strong>Szerző:</strong> {{ recipe.authorEmail }}
+          </p>
+
           <div v-if="isLoggedIn" class="actions">
             <button @click="editRecipe(recipe)">✏️</button>
-            <button @click="deleteRecipe(recipe.id)">🗑️</button>
+            <button @click="deleteRecipe(recipe.id || recipe.Id)">🗑️</button>
           </div>
         </div>
       </li>
@@ -60,7 +79,7 @@
 </template>
 
 <script>
-import api from "@/axios"
+import api from "@/axios";
 
 export default {
   name: "RecipeList",
@@ -70,271 +89,206 @@ export default {
       loading: true,
       error: null,
       showAddForm: false,
-      newRecipe: { name: "", description: "" },
+      newRecipe: { title: "", description: "", ingredients: "" },
       editingId: null,
-      editingRecipe: { name: "", description: "" },
-    }
+      editingRecipe: { title: "", description: "", ingredients: "" },
+    };
   },
 
   computed: {
     isLoggedIn() {
-      return !!localStorage.getItem("token")
+      return !!localStorage.getItem("token");
     },
     authHeaders() {
-      const token = localStorage.getItem("token")
-      return token ? { Authorization: `Bearer ${token}` } : {}
+      const token = localStorage.getItem("token");
+      return token ? { Authorization: `Bearer ${token}` } : {};
     },
   },
 
   mounted() {
-    this.fetchRecipes()
+    this.fetchRecipes();
   },
 
   methods: {
     async fetchRecipes() {
+      this.loading = true;
+      this.error = null;
+
       try {
-        const { data } = await api.get("/api/Recipes", {
+        const { data } = await api.get("/Recipes", {
           headers: { "Content-Type": "application/json", ...(this.authHeaders || {}) },
-        })
-        this.recipes = Array.isArray(data) ? data : []
+        });
+
+        this.recipes = (Array.isArray(data) ? data : []).map(r => ({
+          id: r.id || r.Id,
+          title: r.title || r.Title,
+          description: r.description || r.Description,
+          authorEmail: r.authorEmail || r.AuthorEmail || "",
+          ingredients: Array.isArray(r.ingredients)
+            ? r.ingredients
+            : typeof r.ingredients === "string"
+              ? r.ingredients.replace(/[\[\]"]+/g, "").split(",").map(i => i.trim())
+              : [],
+        }));
+
       } catch (err) {
-        console.error("Hiba a receptek lekérésekor:", err)
-        this.error = "Nem sikerült betölteni a recepteket."
+        console.error("Hiba a receptek lekérésekor:", err);
+
+        if (err.response && err.response.status === 500) {
+          console.warn("⚠️ Backend 500 hibát adott, mintareceptek betöltése...");
+          this.recipes = [
+            { id: 1, title: "Palacsinta", description: "Egyszerű, klasszikus palacsinta.", authorEmail: "minta@izkalauz.hu", ingredients: ["Liszt","Tojás","Tej","Cukor"] },
+            { id: 2, title: "Rántotta", description: "Gyors, finom reggeli.", authorEmail: "chef@izkalauz.hu", ingredients: ["Tojás","Só","Olaj"] },
+          ];
+          this.error = "A szerver nem elérhető, tesztadatok kerültek betöltésre.";
+        } else {
+          this.error = "Nem sikerült betölteni a recepteket.";
+        }
+
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
 
     async addRecipe() {
       try {
-        const { data } = await api.post("/api/Recipes", this.newRecipe, {
+        const payload = {
+          title: this.newRecipe.title,
+          description: this.newRecipe.description,
+          ingredients: this.newRecipe.ingredients
+            ? this.newRecipe.ingredients.split(",").map(i => i.trim())
+            : [],
+        };
+
+        const { data } = await api.post("/Recipes", payload, {
           headers: { "Content-Type": "application/json", ...(this.authHeaders || {}) },
-        })
-        this.recipes.push(data)
-        this.newRecipe = { name: "", description: "" }
-        this.showAddForm = false
+        });
+
+        this.recipes.push(data);
+        this.newRecipe = { title: "", description: "", ingredients: "" };
+        this.showAddForm = false;
       } catch (err) {
-        console.error("Hiba a recept létrehozásakor:", err)
-        this.error = "Nem sikerült hozzáadni a receptet."
+        console.error("Hiba a recept létrehozásakor:", err);
+        this.error = "Nem sikerült hozzáadni a receptet.";
       }
     },
 
     toggleAddMode() {
-      this.showAddForm = !this.showAddForm
+      this.showAddForm = !this.showAddForm;
     },
 
     editRecipe(recipe) {
-      this.editingId = recipe.id
-      this.editingRecipe = { name: recipe.name, description: recipe.description }
+      this.editingId = recipe.id || recipe.Id;
+      this.editingRecipe = {
+        title: recipe.title,
+        description: recipe.description,
+        ingredients: Array.isArray(recipe.ingredients)
+          ? recipe.ingredients.join(", ")
+          : recipe.ingredients,
+      };
     },
 
     async updateRecipe(id) {
       try {
-        const { data } = await api.put(`/api/Recipes/${id}`, this.editingRecipe, {
+        const payload = {
+          title: this.editingRecipe.title,
+          description: this.editingRecipe.description,
+          ingredients: this.editingRecipe.ingredients
+            ? this.editingRecipe.ingredients.split(",").map(i => i.trim())
+            : [],
+        };
+
+        const { data } = await api.put(`/Recipes/${id}`, payload, {
           headers: { "Content-Type": "application/json", ...(this.authHeaders || {}) },
-        })
-        const index = this.recipes.findIndex((r) => r.id === id)
-        if (index !== -1) this.recipes[index] = data
-        this.cancelEdit()
+        });
+
+        const index = this.recipes.findIndex(r => r.id === id || r.Id === id);
+        if (index !== -1) this.recipes[index] = data;
+        this.cancelEdit();
       } catch (err) {
-        console.error("Hiba a recept frissítésekor:", err)
-        this.error = "Nem sikerült frissíteni a receptet."
+        console.error("Hiba a recept frissítésekor:", err);
+        this.error = "Nem sikerült frissíteni a receptet.";
       }
     },
 
     cancelEdit() {
-      this.editingId = null
-      this.editingRecipe = { name: "", description: "" }
+      this.editingId = null;
+      this.editingRecipe = { title: "", description: "", ingredients: "" };
     },
 
     async deleteRecipe(id) {
-      if (!confirm("Biztosan törölni szeretnéd a receptet?")) return
+      if (!confirm("Biztosan törölni szeretnéd a receptet?")) return;
       try {
-        await api.delete(`/api/Recipes/${id}`, {
+        await api.delete(`/Recipes/${id}`, {
           headers: { ...(this.authHeaders || {}) },
-        })
-        this.recipes = this.recipes.filter((r) => r.id !== id)
+        });
+        this.recipes = this.recipes.filter(r => (r.id || r.Id) !== id);
       } catch (err) {
-        console.error("Hiba a recept törlésekor:", err)
-        this.error = "Nem sikerült törölni a receptet."
+        console.error("Hiba a recept törlésekor:", err);
+        this.error = "Nem sikerült törölni a receptet.";
       }
     },
   },
-}
+};
 </script>
 
 <style scoped>
-
-/* (a korábbi design marad — csak a “guest-info” és linkek újak) */
-.guest-info {
-  text-align: center;
-  padding: 20px;
-  background: rgba(255, 255, 240, 0.9);
-  border-radius: 10px;
-  margin: 20px 0;
-}
-.login-link {
-  color: #f39c12;
-  text-decoration: underline;
-  font-weight: bold;
-}
 .recipe-list-container {
-  max-width: 900px;
-  margin: 100px auto 40px;
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin: auto;
+  padding: 20px;
 }
 
+/* Glass effect */
+.glass-box {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(2px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+}
+
+/* Header row */
 .header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
+  margin-bottom: 20px;
 }
 
+/* Add button */
 .add-btn {
-  background: #f39c12;
-  color: white;
-  border: none;
-  padding: 10px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-.add-btn:hover {
-  background: #d68910;
-}
-
-.add-form,
-.edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.add-form input,
-.add-form textarea,
-.edit-form input,
-.edit-form textarea {
-  padding: 10px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  font-size: 1rem;
-  width: 100%;
-}
-
-.form-buttons {
-  display: flex;
-  gap: 10px;
-  justify-content: flex-end;
-}
-
-button.save {
-  background: #27ae60;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
   cursor: pointer;
 }
-button.cancel {
-  background: #7f8c8d;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-button.save:hover {
-  background: #1e8449;
-}
-button.cancel:hover {
-  background: #616a6b;
-}
 
+/* Recipe list */
 .recipe-list {
   list-style: none;
   padding: 0;
-  display: grid;
-  gap: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  margin: 0;
+}
+
+.recipe-item {
+  margin-bottom: 16px;
 }
 
 .recipe-card {
-  background: white;
+  padding: 12px;
+  border: 1px solid #ccc;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-.recipe-card h3 {
-  margin-bottom: 8px;
-  color: #2c3e50;
-}
-.recipe-card p {
-  color: #555;
-  font-size: 0.95rem;
-  line-height: 1.4;
-}
-.actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  margin-top: 12px;
-}
-.actions button {
-  border: none;
-  background: transparent;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: 0.2s;
-}
-.actions button:hover {
-  transform: scale(1.2);
+  background: #fff;
 }
 
-.error {
-  color: #c0392b;
-  font-weight: bold;
-}
-.loading {
-  font-style: italic;
-  color: #888;
+/* Form buttons */
+.form-buttons {
+  margin-top: 10px;
 }
 
-/* ====== Animációk ====== */
-.fade-enter-active,
-.fade-leave-active {
-  transition: all 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-/* ====== Mobil optimalizáció ====== */
-@media (max-width: 600px) {
-  .recipe-list-container {
-    padding: 20px;
-  }
-  .header-row h2 {
-    font-size: 1.4rem;
-  }
-  .add-btn {
-    width: 100%;
-    padding: 12px;
-  }
-  .recipe-card {
-    padding: 16px;
-  }
-  .actions {
-    justify-content: space-between;
-  }
+.form-buttons button {
+  margin-right: 8px;
 }
 </style>
-

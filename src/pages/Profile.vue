@@ -2,7 +2,7 @@
   <div class="profile">
     <h2>Profil oldal</h2>
     <p v-if="userEmail">Be vagy jelentkezve mint: <strong>{{ userEmail }}</strong></p>
-    <p v-else>Betöltés...</p>
+    <p v-else>Üdvözlünk az Ízek világában!</p>
     <p v-if="error" class="error">{{ error }}</p>
   </div>
 </template>

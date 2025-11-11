@@ -1,5 +1,5 @@
 <script>
-import axios from 'axios'
+import api from '@/axios'
 
 export default {
   name: 'Login',
@@ -24,22 +24,22 @@ export default {
 
       this.loading = true
       try {
-        // 🔹 Proxy-n keresztül a backendhez
-        const response = await axios.post('/Auth/login', {
+        // 🔹 Backend hívás proxy-n keresztül
+        const response = await api.post('/Auth/login', {
           email: this.email,
           password: this.password
         })
 
+        // ✅ Token mentése localStorage-be
+        localStorage.setItem('token', response.data.token)
+
         console.log('✅ Sikeres bejelentkezés:', response.data)
         this.success = 'Sikeres bejelentkezés! Átirányítás...'
 
-        // Például token mentése (ha a backend küld)
-        // localStorage.setItem('token', response.data.token)
-
-        // 2 mp múlva irány a főoldal
         setTimeout(() => {
-          this.$router.push('/')
-        }, 2000)
+          this.$router.push('/profile') // profil oldal
+        }, 1500)
+
       } catch (err) {
         console.error('❌ Bejelentkezési hiba:', err.response?.data || err.message)
         this.error =

@@ -12,6 +12,7 @@ const routes = [
   { path: '/register', component: Register },
   { path: '/profile', component: Profile },
   { path: '/recipes', component: Recipes }, // <-- EZ ÚJ
+  
 ]
 
 const router = createRouter({

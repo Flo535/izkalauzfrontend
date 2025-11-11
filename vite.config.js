@@ -1,24 +1,22 @@
-import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import path from 'path'
 
 export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': path.resolve(__dirname, './src')
     }
   },
   server: {
-    port: 5173,
+    port: 5175,
     open: true,
     proxy: {
       '/api': {
-        target: 'https://localhost:5150', // ✅ pontosan egyezik a backenddel
+        target: 'https://localhost:5150',
         changeOrigin: true,
-        secure: false, // ⚠️ szükséges, mert a .NET dev cert önaláírt
-        // ❌ NE töröljük az /api részt!
-        // rewrite: path => path.replace(/^\/api/, '')  ⟵ ezt TÖRÖLJÜK
+        secure: false
       }
     }
   }

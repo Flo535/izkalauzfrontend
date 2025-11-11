@@ -2,7 +2,10 @@
   <div class="recipe-page glass-box">
     <div class="header-row">
       <h1>Receptek</h1>
-      <button class="add-btn" @click="addRecipe">+ Új recept</button>
+      
+    <RecipeSearch :recipes="recipes" />
+    <RecipeList v-if="isLoggedIn" :recipes="recipes" />
+
     </div>
 
     <RecipeList />
@@ -10,16 +13,28 @@
 </template>
 
 <script>
-import api from '@/services/api'
+import api from '@/axios'
+
+import RecipeList from '@/components/Recipe/RecipeList.vue'
+import RecipeSearch from "@/components/Recipe/RecipeSearch.vue";
 
 export default {
-  name: 'RecipePage',
+  name: "RecipePage",
+  components: { RecipeList, RecipeSearch },
+  data() {
+    return {
+      recipes: [], // ide töltöd be a recepteket a backendből
+    };
+  },
+  computed: {
+    isLoggedIn() {
+      return !!localStorage.getItem("token");
+    },
+  },
   mounted() {
-    api.get('/Recipes/ping')
-      .then(res => console.log('✅ Backend válasz:', res.data))
-      .catch(err => console.error('❌ Hiba:', err))
-  }
-}
+    // Itt töltsd be a recepteket a backendből, vagy használj mintarecepteket fallback-ként
+  },
+};
 
 </script>
 
