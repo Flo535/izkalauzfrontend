@@ -1,41 +1,53 @@
 <template>
   <div class="recipe-page glass-box">
     <div class="header-row">
-      <h1>Receptek</h1>
-      
-    <RecipeSearch :recipes="recipes" />
-    <RecipeList v-if="isLoggedIn" :recipes="recipes" />
-
+      <h1>🍽 Receptek</h1>
+      <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
-    <RecipeList />
+    <RecipeList :recipes="filteredRecipes" :is-logged-in="isLoggedIn" />
   </div>
 </template>
 
 <script>
+import RecipeList from '@/components/Recipe/RecipeList.vue'
 import api from '@/axios'
 
-import RecipeList from '@/components/Recipe/RecipeList.vue'
-import RecipeSearch from "@/components/Recipe/RecipeSearch.vue";
-
 export default {
-  name: "RecipePage",
-  components: { RecipeList, RecipeSearch },
+  components: { RecipeList },
   data() {
     return {
-      recipes: [], // ide töltöd be a recepteket a backendből
-    };
+      recipes: [],
+      searchTerm: ''
+    }
   },
   computed: {
-    isLoggedIn() {
-      return !!localStorage.getItem("token");
+    filteredRecipes() {
+      if (!this.searchTerm) return this.recipes
+      return this.recipes.filter(r =>
+        r.title.toLowerCase().includes(this.searchTerm.toLowerCase())
+      )
     },
+    isLoggedIn() {
+      return !!localStorage.getItem('token')
+    }
   },
-  mounted() {
-    // Itt töltsd be a recepteket a backendből, vagy használj mintarecepteket fallback-ként
-  },
-};
-
+  async mounted() {
+    try {
+      const token = localStorage.getItem('token')
+      const headers = token ? { Authorization: `Bearer ${token}` } : {}
+      const { data } = await api.get('/Recipes', { headers })
+      this.recipes = data
+    } catch (err) {
+      console.error('Hiba a receptek betöltésekor:', err)
+      // Tesztadat fallback
+      this.recipes = [
+        { id: 1, title: "Palacsinta", description: "Egyszerű, klasszikus palacsinta.", ingredients: ["Liszt","Tojás","Tej","Cukor"], authorEmail: "minta@izkalauz.hu" },
+        { id: 2, title: "Rántotta", description: "Gyors, finom reggeli.", ingredients: ["Tojás","Só","Olaj"], authorEmail: "chef@izkalauz.hu" }
+      ]
+    }
+  }
+}
 </script>
 
 <style scoped>
@@ -44,64 +56,24 @@ export default {
   margin: 20px auto;
   padding: 40px 20px;
 }
-
-/* ===== GLASS EFFECT ===== */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.search-input {
+  padding: 8px;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 250px;
+}
 .glass-box {
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(2px);
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 16px;
   box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-}
-
-/* ===== HEADER SOR ===== */
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-}
-
-.recipe-page h1 {
-  font-size: 2.4rem;
-  color: #2c3e50;
-  margin: 0;
-  font-weight: bold;
-}
-
-/* ===== ADD NEW BUTTON GLASS STYLE ===== */
-.add-btn {
-  padding: 10px 18px;
-  font-size: 1rem;
-  font-weight: bold;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(25px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.add-btn:hover {
-  background: rgba(255, 255, 255, 0.7);
-  transform: scale(1.05);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-}
-
-.add-btn:active {
-  transform: scale(0.98);
-}
-
-/* ===== MOBILE ===== */
-@media (max-width: 768px) {
-  .header-row {
-    flex-direction: column;
-    gap: 15px;
-  }
-
-  .add-btn {
-    width: 100%;
-  }
 }
 </style>
