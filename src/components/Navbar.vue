@@ -11,9 +11,13 @@
     <ul :class="['nav-links', { open: isOpen }]">
       <li><router-link to="/" @click="closeMenu">Főoldal</router-link></li>
       <li><router-link to="/recipes" @click="closeMenu">🍽 Receptek</router-link></li>
+
       <li v-if="!isLoggedIn"><router-link to="/login" @click="closeMenu">Bejelentkezés</router-link></li>
       <li v-if="!isLoggedIn"><router-link to="/register" @click="closeMenu">Regisztráció</router-link></li>
+
       <li v-if="isLoggedIn"><router-link to="/profile" @click="closeMenu">Profil</router-link></li>
+      <li v-if="isAdmin"><router-link to="/admin" @click="closeMenu">Admin</router-link></li>
+
       <li v-if="isLoggedIn"><a href="#" @click="logout">Kijelentkezés</a></li>
     </ul>
   </nav>
@@ -23,23 +27,44 @@
 export default {
   name: 'Navbar',
   data() {
-    return { isOpen: false, tick: 0 } // tick a computed újraszámolásához
-  },
-  computed: {
-    isLoggedIn() {
-      return !!localStorage.getItem('token')
+    return { 
+      isOpen: false,
+      tick: 0
     }
   },
+
+  computed: {
+    isLoggedIn() {
+      this.tick
+      return !!localStorage.getItem('token')
+    },
+    isAdmin() {
+      this.tick
+      const token = localStorage.getItem('token')
+      if (!token) return false
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        // fix: ellenőrizzük, hogy a role mező pontosan "Admin"
+        return payload.role && payload.role.toLowerCase() === 'admin'
+      } catch {
+        return false
+      }
+    }
+  },
+
   mounted() {
-    // minden másodpercben ellenőrzi a token változást → menü frissül
     this.interval = setInterval(() => this.tick++, 1000)
   },
+
   beforeUnmount() {
     clearInterval(this.interval)
   },
+
   methods: {
     toggleMenu() { this.isOpen = !this.isOpen },
     closeMenu() { this.isOpen = false },
+
     logout() {
       localStorage.removeItem('token')
       localStorage.removeItem('email')
