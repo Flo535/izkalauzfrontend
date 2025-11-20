@@ -24,33 +24,20 @@
 </template>
 
 <script>
+import { authState, clearAuth } from '../auth.js'  // most már a src/auth.js-re mutat
+
 export default {
   name: 'Navbar',
   data() {
-    return { 
+    return {
       isOpen: false,
       tick: 0
     }
   },
 
   computed: {
-    isLoggedIn() {
-      this.tick
-      return !!localStorage.getItem('token')
-    },
-    isAdmin() {
-      this.tick
-      const token = localStorage.getItem('token')
-      if (!token) return false
-
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        // fix: ellenőrizzük, hogy a role mező pontosan "Admin"
-        return payload.role && payload.role.toLowerCase() === 'admin'
-      } catch {
-        return false
-      }
-    }
+    isLoggedIn() { return authState.isLoggedIn },
+    isAdmin() { return authState.isAdmin }
   },
 
   mounted() {
@@ -66,8 +53,7 @@ export default {
     closeMenu() { this.isOpen = false },
 
     logout() {
-      localStorage.removeItem('token')
-      localStorage.removeItem('email')
+      clearAuth()
       this.$router.push('/login')
       this.isOpen = false
     }
