@@ -84,38 +84,40 @@ export default {
 }
 
 .sidebar a {
+  position: relative;
   color: #3B3B3B;
   text-decoration: none;
   font-weight: 500;
   padding: 6px 10px;
   border-radius: 8px;
   display: block;
-  position: relative;
-  transition: 0.3s;
+  transition: background 0.4s ease, padding-left 0.3s ease;
 }
 
-/* 🔥 HALVÁNYABB, FINOM SZÍNEK + SIMA TRANSITION */
-.sidebar a {
-  color: #3B3B3B;
-  text-decoration: none;
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 8px;
-  display: block;
-  position: relative;
-  transition: background 0.4s ease, padding-left 0.3s ease; /* sima átmenet */
-}
-
-.sidebar a:hover {
-  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5)); /* halványabb citrom → narancs */
-  padding-left: 14px;
-  color: #3B3B3B;
+/* 🔥 BAL NARANCS SÁV ÉS HALVÁNY ÁTMENET */
+.sidebar a::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: rgba(255, 165, 80, 0.7); /* halvány narancs */
+  border-radius: 4px;
+  opacity: 0; /* alapból láthatatlan */
+  transition: opacity 0.3s ease;
+  z-index: 1; /* link elé */
 }
 
 .sidebar a:hover::before {
-  background: rgba(255, 165, 80, 0.7); /* halvány narancs bal sáv */
+  opacity: 1; /* hoverkor látszik */
 }
 
+.sidebar a:hover {
+  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5)); /* citrom → narancs */
+  padding-left: 14px;
+  z-index: 0; /* background a sáv mögött */
+}
 
 /* DESKTOP SIDEBAR */
 .sidebar.desktop {
