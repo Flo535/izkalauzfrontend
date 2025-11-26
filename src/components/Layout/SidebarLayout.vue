@@ -58,9 +58,9 @@ export default {
 .layout {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - 70px); /* header alatt kezdődik */
+  min-height: calc(100vh - 70px);
   position: relative;
-  margin-top: 70px; /* header magassága */
+  margin-top: 70px;
   font-family: 'Segoe UI', sans-serif;
 }
 
@@ -90,11 +90,32 @@ export default {
   padding: 6px 10px;
   border-radius: 8px;
   display: block;
+  position: relative;
+  transition: 0.3s;
+}
+
+/* 🔥 HALVÁNYABB, FINOM SZÍNEK + SIMA TRANSITION */
+.sidebar a {
+  color: #3B3B3B;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 8px;
+  display: block;
+  position: relative;
+  transition: background 0.4s ease, padding-left 0.3s ease; /* sima átmenet */
 }
 
 .sidebar a:hover {
-  background: rgba(237, 227, 218, 0.6);
+  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5)); /* halványabb citrom → narancs */
+  padding-left: 14px;
+  color: #3B3B3B;
 }
+
+.sidebar a:hover::before {
+  background: rgba(255, 165, 80, 0.7); /* halvány narancs bal sáv */
+}
+
 
 /* DESKTOP SIDEBAR */
 .sidebar.desktop {
@@ -174,12 +195,10 @@ export default {
     box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
 
-  /* ===== CONTENT OFFSET (Navbar alá ne csússzon) ===== */
   .main-area {
     flex: 1;
     padding: 20px;
-    margin-top: 70px; /* ✅ hozzáadva */
+    margin-top: 70px;
   }
-
 }
 </style>
