@@ -49,7 +49,7 @@ export default {
 
 /* Kártya */
 .recipe-card {
-  background-color: rgba(200, 255, 200, 0.3); /* enyhe zöld */
+  background: linear-gradient(180deg, rgba(200,255,200,0.5), rgba(220,255,220,0.3));
   border-radius: 12px;
   padding: 20px;
   display: flex;
@@ -61,6 +61,7 @@ export default {
   opacity: 0;
   animation: fadeIn 0.6s forwards;
 }
+
 
 /* Fade-in animáció */
 @keyframes fadeIn {
@@ -80,9 +81,7 @@ export default {
   margin: 0 0 8px 0;
   font-size: 1.2rem;
   font-weight: 600;
-  background: linear-gradient(90deg, orange, red);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: #4a4a4a; /* egységes szürke */
   display: flex;
   align-items: center;
 }
@@ -90,8 +89,7 @@ export default {
 /* Ikon a cím előtt */
 .recipe-title .recipe-icon {
   margin-right: 6px;
-  color: white;           /* FEHÉR IKON */
-  -webkit-text-fill-color: initial; /* ne legyen átmenetes */
+  color: white; /* FEHÉR IKON */
   font-size: 1.2rem;
 }
 
@@ -111,7 +109,7 @@ export default {
   scroll-behavior: smooth;
 }
 
-/* Szebb scroll sáv (Webkit és Firefox) */
+/* Szebb scroll sáv (Webkit) */
 .recipe-description-wrapper::-webkit-scrollbar {
   width: 6px;
 }
@@ -122,19 +120,19 @@ export default {
 }
 
 .recipe-description-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(0, 128, 0, 0.3);
+  background: linear-gradient(to bottom, #a8e6cf, #56ab2f); /* világos -> sötét zöld */
   border-radius: 3px;
   transition: background 0.2s ease;
 }
 
 .recipe-description-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 128, 0, 0.5);
+  background: linear-gradient(to bottom, #56ab2f, #a8e6cf);
 }
 
 /* Firefox scroll */
 .recipe-description-wrapper {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,128,0,0.3) rgba(0,128,0,0.05);
+  scrollbar-color: rgba(86, 171, 47, 0.7) rgba(168, 230, 207, 0.1);
 }
 
 /* Leírás */

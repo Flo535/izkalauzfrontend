@@ -59,7 +59,6 @@ export default {
   display: flex;
   width: 100%;
   min-height: calc(100vh - 70px);
-  position: relative;
   margin-top: 70px;
   font-family: 'Segoe UI', sans-serif;
 }
@@ -77,24 +76,24 @@ export default {
 .sidebar ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .sidebar li {
-  margin: 14px 0;
+  margin: 12px 0;
 }
 
 .sidebar a {
   position: relative;
+  display: block;
+  padding: 8px 12px 8px 16px; /* 🔹 Extra bal padding a pseudo-element miatt */
+  border-radius: 8px;
+  font-weight: 500;
   color: #3B3B3B;
   text-decoration: none;
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 8px;
-  display: block;
   transition: background 0.4s ease, padding-left 0.3s ease;
 }
 
-/* 🔥 BAL NARANCS SÁV ÉS HALVÁNY ÁTMENET */
 .sidebar a::before {
   content: "";
   position: absolute;
@@ -102,21 +101,21 @@ export default {
   top: 0;
   width: 4px;
   height: 100%;
-  background: rgba(255, 165, 80, 0.7); /* halvány narancs */
+  background: rgba(255, 165, 80, 0.7);
   border-radius: 4px;
-  opacity: 0; /* alapból láthatatlan */
+  opacity: 0;
   transition: opacity 0.3s ease;
-  z-index: 1; /* link elé */
+  z-index: 1;
 }
 
 .sidebar a:hover::before {
-  opacity: 1; /* hoverkor látszik */
+  opacity: 1;
 }
 
 .sidebar a:hover {
-  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5)); /* citrom → narancs */
-  padding-left: 14px;
-  z-index: 0; /* background a sáv mögött */
+  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5));
+  padding-left: 20px; /* 🔹 Hoverkor kicsit nagyobb */
+  z-index: 0;
 }
 
 /* DESKTOP SIDEBAR */
@@ -144,6 +143,18 @@ export default {
 /* MOBILE HAMBURGER BUTTON */
 .mobile-menu-btn {
   display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1200;
+  background: rgba(247,243,238,0.95);
+  border: none;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  font-size: 1.6rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 /* MOBILE SIDEBAR PANEL */
@@ -183,18 +194,6 @@ export default {
 
   .mobile-menu-btn {
     display: block;
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1100;
-    background: rgba(247,243,238,0.95);
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.6rem;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
   }
 
   .main-area {

@@ -1,9 +1,7 @@
 <template>
   <div class="recipe-page glass-box">
     <div class="header-row">
-      <h1 class="recipe-header">
-        <span class="icon">🍽️</span> Receptek
-      </h1>
+      <h1><span class="recipe-icon">🍽️</span>Receptek</h1>
       <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
@@ -59,6 +57,7 @@ export default {
   padding: 40px 20px;
 }
 
+/* Header row */
 .header-row {
   display: flex;
   justify-content: space-between;
@@ -66,23 +65,27 @@ export default {
   margin-bottom: 20px;
 }
 
-/* Főcím stílus – ikon fehér, szöveg halvány zöld */
-.recipe-header {
+/* Főcím */
+.header-row h1 {
   font-size: 2rem;
   font-weight: 700;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(90deg, #006400, #a8e6a2); /* sötétzöld → halványzöld */
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
-  gap: 12px;
-  color: #8fbc8f; /* halvány zöld */
-  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+  margin: 0;
 }
 
-.recipe-header .icon {
-  color: white; /* ikon fix fehér */
-  font-size: 2.2rem;
+/* Ikon a főcím előtt */
+.header-row h1 .recipe-icon {
+  margin-right: 8px;
+  color: white; /* ikon fehér */
+  -webkit-text-fill-color: initial;
+  font-size: 2rem;
 }
 
+/* Keresőmező */
 .search-input {
   padding: 8px;
   font-size: 1rem;
@@ -91,6 +94,7 @@ export default {
   width: 250px;
 }
 
+/* Glass-box háttér */
 .glass-box {
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(2px);
