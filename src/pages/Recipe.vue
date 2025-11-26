@@ -1,7 +1,9 @@
 <template>
   <div class="recipe-page glass-box">
     <div class="header-row">
-      <h1>🍽 Receptek</h1>
+      <h1 class="recipe-header">
+        <span class="icon">🍽️</span> Receptek
+      </h1>
       <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
@@ -56,12 +58,31 @@ export default {
   margin: 20px auto;
   padding: 40px 20px;
 }
+
 .header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
+
+/* Főcím stílus – ikon fehér, szöveg halvány zöld */
+.recipe-header {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #8fbc8f; /* halvány zöld */
+  text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.recipe-header .icon {
+  color: white; /* ikon fix fehér */
+  font-size: 2.2rem;
+}
+
 .search-input {
   padding: 8px;
   font-size: 1rem;
@@ -69,6 +90,7 @@ export default {
   border: 1px solid #ccc;
   width: 250px;
 }
+
 .glass-box {
   background: rgba(255, 255, 255, 0.65);
   backdrop-filter: blur(2px);
