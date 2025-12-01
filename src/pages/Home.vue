@@ -1,23 +1,31 @@
-
 <template>
-
   <div class="home-container">
-    <!-- Nyitó tartalom (mindenki számára látható) -->
+    <!-- Nyitó tartalom -->
     <section class="intro-section">
-      <h1>Üdvözöl az ÍzKalauz!</h1>
+      <h1>Üdvözöl az Íz-kalauz!</h1>
       <p>
-        Tervezd meg a heti menüt, tárold kedvenc receptjeidet, és fedezz fel új ízeket!
+        Tervezd meg a heti menüt, mentsd el kedvenc receptjeidet, és fedezz fel új ízeket!
       </p>
-      <ul>
-        <li>✔️ Receptek elmentése</li>
-        <li>✔️ Heti menü összeállítása</li>
-        <li>✔️ Vásárlólista generálása</li>
-      </ul>
+      
+      <ul class="feature-list">
+  <li>
+    <span class="check check-yellow">🍋</span> <!-- első pipa citrom -->
+    <span class="text">Receptek mentése</span>
+  </li>
+  <li>
+    <span class="check check-orange">🫑</span> <!-- második pipa zöld paprika -->
+    <span class="text">Heti menü összeállítása</span>
+  </li>
+  <li>
+    <span class="check check-green">🍎</span> <!-- harmadik pipa alma -->
+    <span class="text">Vásárlólista készítése</span>
+  </li>
+</ul>
 
-        <!-- Logo -->
+
+      <!-- Logo -->
       <img :src="logo" alt="Logo" class="logo-image" />
     </section>
-  
 
     <!-- Feltételes tartalom -->
     <section v-if="userEmail" class="user-section">
@@ -32,8 +40,7 @@
         <router-link to="/register">regisztrálj</router-link>,
         hogy elkezdhesd az utazást az ízek világába!
       </p>
-  </section>
-
+    </section>
   </div>
 </template>
 
@@ -43,14 +50,12 @@ import logo from '@/assets/logo.png'
 
 export default {
   name: 'Home',
-
   data() {
     return {
-      logo,          // ✅ itt lesz elérhető a kép
+      logo,
       userEmail: null
     }
   },
-
   mounted() {
     const token = localStorage.getItem('token')
     if (token) {
@@ -63,7 +68,6 @@ export default {
       }
     }
   },
-
   methods: {
     handleLogout() {
       localStorage.removeItem('token')
@@ -74,51 +78,86 @@ export default {
 }
 </script>
 
-
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
-.logo-image {
-  max-width: 300px;
-  height: auto;
-  margin: 0 auto 25px;
-  display: block;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-  border-radius: 10px;
-  background-color: #ffffffcc; /* halvány fehér háttér */
-  padding: 10px;
-}
 
 .home-container {
   max-width: 800px;
   margin: 60px auto;
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  box-shadow: 0 0 15px rgba(0,0,0,0.15);
   text-align: center;
   backdrop-filter: blur(2px);
+  background: linear-gradient(135deg, rgba(255,200,120,0.2) 0%, rgba(255,220,150,0.2) 100%);
 }
 
 .intro-section h1 {
-  font-size: 2.2rem;
-  color: #2c3e50;
-  margin-bottom: 10px;
+  font-family: 'Playfair Display', serif;
+  font-size: 2.4rem;
+  background: linear-gradient(to right, #ff6a00, #ee0979);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 15px;
 }
 
 .intro-section p {
   font-size: 18px;
   margin-bottom: 20px;
+  color: #2c3e50;
 }
 
-.intro-section ul {
+.feature-list {
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column; /* egymás alatt */
+  align-items: center;    /* lista középre */
+  gap: 12px;              /* távolság listaelemek között */
 }
 
-.intro-section li {
+.feature-list li {
+  display: flex;
+  align-items: center;     /* pipa és szöveg egy vonalban */
+  justify-content: flex-start;
+  min-width: 240px;        /* pipák egy vonalban */
+}
+
+.check {
+  font-size: 20px;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+/* Színek */
+.check-orange { color: #ff6a00 !important; }
+.check-green  { color: #28a745 !important; }
+.check-yellow { color: #f7dc6f !important; }
+
+/* Hover effekt */
+.check:hover {
+  transform: scale(1.3) rotate(-10deg);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+}
+
+.text {
+  color: #2c3e50;
+  font-weight: 500;
   font-size: 16px;
-  margin: 5px 0;
-  color: #333;
+}
+
+.logo-image {
+  max-width: 300px;
+  height: auto;
+  margin: 25px auto 0;
+  display: block;
+  filter: drop-shadow(0 4px 10px rgba(255, 106, 0, 0.5));
+  border-radius: 12px;
+  background-color: #ffffffcc;
+  padding: 10px;
 }
 
 .user-section,
@@ -127,15 +166,19 @@ export default {
 }
 
 button {
-  margin-top: 10px;
-  padding: 10px 20px;
-  background-color: #d33;
+  margin-top: 15px;
+  padding: 10px 25px;
+  background: linear-gradient(to right, #ff6a00, #ee0979);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
 }
+
 button:hover {
-  background-color: #b22;
+  background: linear-gradient(to right, #ee0979, #ff6a00);
+  transform: scale(1.05);
 }
 </style>
