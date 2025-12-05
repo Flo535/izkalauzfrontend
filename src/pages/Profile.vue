@@ -178,7 +178,7 @@ export default {
 
 <style scoped>
 .profile-page { max-width: 900px; margin: 80px auto; padding: 0 20px; }
-.my-recipes-title { font-size: 1.75rem; font-weight: bold; background: linear-gradient(to right, #4caf50, #a3d9a5); -webkit-background-clip: text; color: transparent; margin-bottom: 16px; }
+.my-recipes-title { font-size: 1.75rem; font-weight: bold; background: linear-gradient(to right, #4caf50, #a3d9a5); background-clip: text; -webkit-background-clip: text; color: transparent; margin-bottom: 16px; }
 .controls-left { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
 .search-input { width: 200px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
 .add-button { padding: 8px 12px; border-radius: 5px; background-color: #a3d9a5; border: none; cursor: pointer; color: #fff; font-weight: 500; }
