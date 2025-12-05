@@ -1,37 +1,36 @@
 <template>
   <div class="profile-page fade-in">
-    <!-- Saját receptjeim felirat -->
     <h2 class="my-recipes-title">Saját receptjeim:</h2>
 
-    <!-- Bal oldali controls: gomb + kereső -->
     <div class="controls-left">
       <button class="add-button" @click="showModal = true">Új recept hozzáadása</button>
       <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
-    <!-- Hibaüzenet -->
     <div v-if="error" class="error">{{ error }}</div>
-    <div v-if="filteredRecipes.length === 0 && !error" class="text-center text-gray-500">Nincs megjeleníthető recept.</div>
+    <div v-if="filteredRecipes.length === 0 && !error" class="text-center text-gray-500">
+      Nincs megjeleníthető recept.
+    </div>
 
-    <!-- Recept lista -->
     <div class="recipe-list">
       <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card">
-        <div class="icon-circle">🍽️</div>
+        <div class="recipe-image-wrapper">
+          <img v-if="recipe.imagePath" :src="fullImagePath(recipe.imagePath)" @error="onImageError" />
+          <div v-else class="recipe-no-image">Nincs kép</div>
+        </div>
+
         <h4 class="recipe-title">{{ recipe.title }}</h4>
         <p class="recipe-description">{{ recipe.description }}</p>
 
-        <!-- Scroll a hozzávalókhoz -->
         <div class="ingredients-scroll">
           <p class="ingredients"><strong>Hozzávalók:</strong> {{ recipe.ingredients.join(', ') }}</p>
         </div>
 
-        <!-- Szerző -->
         <div class="author-info">
           <span class="author-icon">👤</span>
           <span class="author-email">{{ recipe.authorEmail }}</span>
         </div>
 
-        <!-- Gombok -->
         <div class="card-buttons">
           <button class="edit-btn" @click="editRecipe(recipe)">Szerkesztés</button>
           <button class="delete-btn" @click="deleteRecipe(recipe.id)">Törlés</button>
@@ -95,6 +94,20 @@ export default {
     }
   },
   methods: {
+    fullImagePath(path) {
+      if (!path) return null
+      return `https://localhost:5150/${path.replace(/\\/g, '/')}`
+    },
+    onImageError(event) {
+      event.target.style.display = 'none'
+      const wrapper = event.target.parentElement
+      if (!wrapper.querySelector('.recipe-no-image')) {
+        const noImageDiv = document.createElement('div')
+        noImageDiv.className = 'recipe-no-image'
+        noImageDiv.innerText = 'Nincs kép'
+        wrapper.appendChild(noImageDiv)
+      }
+    },
     async fetchRecipes() {
       try {
         const token = localStorage.getItem('token')
@@ -164,168 +177,30 @@ export default {
 </script>
 
 <style scoped>
-.profile-page {
-  max-width: 900px;
-  margin: 80px auto;
-  padding: 0 20px;
-}
-
-/* Saját receptjeim */
-.my-recipes-title {
-  font-size: 1.75rem;
-  font-weight: bold;
-  background: linear-gradient(to right, #4caf50, #a3d9a5);
-  -webkit-background-clip: text;
-  color: transparent;
-  margin-bottom: 16px;
-}
-
-/* Bal oldali controls */
-.controls-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.search-input {
-  width: 200px;
-  padding: 8px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-.add-button {
-  padding: 8px 12px;
-  border-radius: 5px;
-  background-color: #a3d9a5; /* halvány zöld */
-  border: none;
-  cursor: pointer;
-  color: #fff;
-  font-weight: 500;
-}
-
-/* Recept lista */
-.recipe-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 18px;
-}
-
-.recipe-card {
-  background: linear-gradient(to bottom right, #d4edc8, #f9fdf7); /* halvány zöld → alul majdnem fehér */
-  padding: 18px;
-  border-radius: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  position: relative;
-  transition: 0.25s ease;
-  overflow: hidden;
-  
-  /* egységes méret */
-  height: 300px;  /* fix magasság */
-  display: flex;
-  flex-direction: column;
-}
-
-.recipe-description {
-  flex: 1; /* a leírás kitölti a fennmaradó helyet */
-  overflow-y: auto; /* scroll, ha hosszú a szöveg */
-  margin: 10px 0;
-  padding-right: 5px; /* scroll miatt */
-}
-
-.ingredients {
-  font-size: 0.9rem;
-  overflow-y: auto; /* ha sok hozzávaló, scroll */
-  max-height: 50px;
-  margin-top: 5px;
-}
-
-/* hover animáció megmarad */
-.recipe-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-}
-
-
-.icon-circle {
-  font-size: 24px;
-  color: white;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin-bottom: 10px;
-}
-
-.recipe-title {
-  font-weight: bold;
-  margin-bottom: 8px;
-}
-
-.recipe-description {
-  margin-bottom: 8px;
-}
-
-
-
-.author-info {
-  display: flex;
-  align-items: center;
-  font-size: 0.875rem;
-  color: #555;
-  margin-top: 10px;
-}
-
-.author-icon {
-  margin-right: 5px;
-}
-
-.card-buttons {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.edit-btn {
-  background-color: #a3d9a5; /* halvány zöld */
-  border: none;
-  padding: 6px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  color: white;
-}
-
-.delete-btn {
-  background-color: #ffc107; /* halvány narancs */
-  border: none;
-  padding: 6px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  color: white;
-}
-
-/* Fade-in animáció */
-.fade-in {
-  animation: fadeIn 0.5s ease forwards;
-}
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center;
-  z-index: 1000;
-}
-.modal {
-  background: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%;
-}
+.profile-page { max-width: 900px; margin: 80px auto; padding: 0 20px; }
+.my-recipes-title { font-size: 1.75rem; font-weight: bold; background: linear-gradient(to right, #4caf50, #a3d9a5); -webkit-background-clip: text; color: transparent; margin-bottom: 16px; }
+.controls-left { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+.search-input { width: 200px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+.add-button { padding: 8px 12px; border-radius: 5px; background-color: #a3d9a5; border: none; cursor: pointer; color: #fff; font-weight: 500; }
+.recipe-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.recipe-card { background: linear-gradient(to bottom right, #d4edc8, #f9fdf7); padding: 18px; border-radius: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); position: relative; transition: 0.25s ease; overflow: hidden; display: flex; flex-direction: column; height: 380px; }
+.recipe-image-wrapper { width: 100%; height: 150px; overflow: hidden; border-radius: 10px; margin-bottom: 10px; }
+.recipe-image-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recipe-no-image { width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; background: #eee; color: #888; font-weight: bold; border-radius: 10px; margin-bottom: 10px; }
+.recipe-title { font-weight: bold; margin-bottom: 8px; }
+.recipe-description { flex: 1; overflow-y: auto; margin: 10px 0; padding-right: 5px; }
+.ingredients-scroll { max-height: 50px; overflow-y: auto; }
+.ingredients { font-size: 0.9rem; margin-top: 5px; }
+.recipe-card:hover { transform: translateY(-4px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+.author-info { display: flex; align-items: center; font-size: 0.875rem; color: #555; margin-top: 10px; }
+.author-icon { margin-right: 5px; }
+.card-buttons { display: flex; gap: 10px; margin-top: 10px; }
+.edit-btn { background-color: #a3d9a5; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
+.delete-btn { background-color: #ffc107; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.modal { background: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; }
 .modal-input, .modal-textarea { display: block; width: 100%; margin: 5px 0; padding: 5px; }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
 </style>
