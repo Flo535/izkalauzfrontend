@@ -69,13 +69,15 @@ export default {
 .header-row h1 {
   font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(90deg, #006400, #a8e6a2); /* sötétzöld → halványzöld */
+  background: linear-gradient(90deg, #ff8c00, #ffb347); /* narancs → világos narancs */
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
   display: flex;
   align-items: center;
   margin: 0;
 }
+
 
 /* Ikon a főcím előtt */
 .header-row h1 .recipe-icon {

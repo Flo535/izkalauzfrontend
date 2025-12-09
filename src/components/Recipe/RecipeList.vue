@@ -80,8 +80,12 @@ export default {
 
 /* Kártya */
 .recipe-card {
-  background: linear-gradient(180deg, rgba(200,255,200,0.5), rgba(220,255,220,0.3));
-  border-radius: 12px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 165, 0, 0.5),   /* halványabb narancs fent */
+    rgba(255, 165, 0, 0.05)   /* majdnem átlátszó narancs lent */
+  );
+  border-radius: 16px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -92,6 +96,9 @@ export default {
   opacity: 0;
   animation: fadeIn 0.6s forwards;
 }
+
+
+
 
 /* Fade-in animáció */
 @keyframes fadeIn {
