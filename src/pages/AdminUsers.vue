@@ -10,6 +10,7 @@
         <tr>
           <th>Email</th>
           <th>Role</th>
+          <th>Lista</th>
           <th>Műveletek</th>
         </tr>
       </thead>

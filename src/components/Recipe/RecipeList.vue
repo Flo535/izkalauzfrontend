@@ -20,8 +20,13 @@
 
       <!-- Recept címe -->
       <h3 class="recipe-title">
+      <router-link
+        :to="`/recept/${recipe.id}`"
+        class="recipe-title-link"
+      >
         <span class="recipe-icon">🍽️</span>
         {{ recipe.title }}
+      </router-link>
       </h3>
 
       <!-- Hozzávalók -->
@@ -85,7 +90,7 @@ export default {
     rgba(255, 165, 0, 0.5),   /* halványabb narancs fent */
     rgba(255, 165, 0, 0.05)   /* majdnem átlátszó narancs lent */
   );
-  border-radius: 16px;
+  border-radius: 12px;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -149,6 +154,13 @@ export default {
   color: #4a4a4a;
   display: flex;
   align-items: center;
+}
+
+.recipe-title-link{
+    color: inherit;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
 }
 
 /* Ikon a cím előtt */

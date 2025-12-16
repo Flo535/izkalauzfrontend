@@ -16,7 +16,7 @@ const routes = [
   { path: '/recipes', component: Recipes },
   { path: '/receptek', component: Recipes }, // magyar URL
   { path: '/kedvencek', component: Favorites },
-  { path: '/vasarlas', component: Cart },
+  { path: '/vasarlas', component: Cart, meta: { requiresAuth: true } },
   { path: '/menu', component: Menu },
   { path: '/login', component: Login },
   { path: '/register', component: Register },

@@ -120,6 +120,8 @@ export default {
 
 /* DESKTOP SIDEBAR */
 .sidebar.desktop {
+  top: 110px;
+  position: fixed;
   width: 240px;
   min-height: 100%;
   box-shadow: 4px 0 12px rgba(0,0,0,0.06);
@@ -130,6 +132,7 @@ export default {
 .main-area {
   flex: 1;
   padding: 20px;
+  margin-left: 290px;
 }
 
 .glass-box {
