@@ -1,243 +1,136 @@
 <template>
-  <div class="recipe-list">
-    <div
-      v-for="recipe in recipes"
-      :key="recipe.id"
-      class="recipe-card"
-    >
-      <!-- Recept kép vagy "Nincs kép" -->
-      <div v-if="recipe.imagePath" class="recipe-image-wrapper">
-        <img
-          :src="fullImagePath(recipe.imagePath)"
-          :alt="recipe.title"
-          class="recipe-image"
-          @error="onImageError($event)"
-        />
-      </div>
-      <div v-else class="recipe-no-image">
-        Nincs kép
-      </div>
+  <div class="recipe-page fade-in">
+    <h2 class="recipes-title">Receptek</h2>
 
-      <!-- Recept címe -->
-      <h3 class="recipe-title">
-      <router-link
-        :to="`/recept/${recipe.id}`"
-        class="recipe-title-link"
-      >
-        <span class="recipe-icon">🍽️</span>
-        {{ recipe.title }}
-      </router-link>
-      </h3>
+    <div class="controls-left">
+      <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
+    </div>
 
-      <!-- Hozzávalók -->
-      <p v-if="recipe.ingredients?.length" class="recipe-ingredients">
-        Hozzávalók: {{ recipe.ingredients.join(', ') }}
-      </p>
+    <div v-if="recipes.length === 0" class="text-center text-gray-500">
+      Nincs megjeleníthető recept.
+    </div>
 
-      <!-- Elkészítés / leírás görgethető -->
-      <div class="recipe-description-wrapper">
+    <div class="recipe-list">
+      <div v-for="recipe in filteredRecipes" :key="recipe.id" class="recipe-card">
+        <div class="recipe-image-wrapper">
+          <img v-if="recipe.imagePath" :src="fullImagePath(recipe.imagePath)" @error="onImageError" />
+          <div v-else class="recipe-no-image">Nincs kép</div>
+        </div>
+
+        <h4 class="recipe-title">
+          <router-link :to="`/recept/${recipe.id}`" class="recipe-title-link">
+            {{ recipe.title }}
+          </router-link>
+        </h4>
+
         <p class="recipe-description">{{ recipe.description }}</p>
-      </div>
 
-      <!-- Szerző a végére -->
-      <p v-if="recipe.authorEmail" class="recipe-author">
-        👤 {{ recipe.authorEmail }}
-      </p>
+        <div class="ingredients-scroll">
+          <p class="ingredients"><strong>Hozzávalók:</strong> {{ recipe.ingredients.join(', ') }}</p>
+        </div>
+
+        <div class="author-info">
+          <span class="author-icon">👤</span>
+          <span class="author-email">{{ recipe.authorEmail }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAPOZÓ -->
+    <div class="pagination">
+      <button @click="prevPage" :disabled="page === 1">⬅ Előző</button>
+      <span>{{ page }} / {{ totalPages }}</span>
+      <button @click="nextPage" :disabled="page >= totalPages">Következő ➡</button>
     </div>
   </div>
 </template>
 
 <script>
+import api from '@/axios'
+
 export default {
   props: {
-    recipes: Array,
-    isLoggedIn: Boolean
+    recipes: Array
+  },
+  data() {
+    return {
+      searchTerm: '',
+      page: 1,
+      pageSize: 6,
+      totalCount: 0
+    }
+  },
+  computed: {
+    filteredRecipes() {
+      if (!this.searchTerm) return this.recipes
+      return this.recipes.filter(r =>
+        r.title.toLowerCase().includes(this.searchTerm.toLowerCase())
+      )
+    },
+    totalPages() {
+      return Math.ceil(this.totalCount / this.pageSize)
+    }
   },
   methods: {
-    // Backendből kapott relative path → teljes HTTPS URL
     fullImagePath(path) {
-      if (!path) return null;
-      return `https://localhost:5150/${path.replace(/\\/g, '/')}`;
+      if (!path) return null
+      return `https://localhost:5150/${path.replace(/\\/g, '/')}`
     },
-    // Ha a kép nem töltődik be, eltűnteti és megjeleníti a "Nincs kép"-et
     onImageError(event) {
-      event.target.style.display = 'none';
-      const wrapper = event.target.parentElement;
+      event.target.style.display = 'none'
+      const wrapper = event.target.parentElement
       if (!wrapper.querySelector('.recipe-no-image')) {
-        const noImageDiv = document.createElement('div');
-        noImageDiv.className = 'recipe-no-image';
-        noImageDiv.innerText = 'Nincs kép';
-        wrapper.appendChild(noImageDiv);
+        const noImageDiv = document.createElement('div')
+        noImageDiv.className = 'recipe-no-image'
+        noImageDiv.innerText = 'Nincs kép'
+        wrapper.appendChild(noImageDiv)
       }
-    }
+    },
+    nextPage() { if(this.page < this.totalPages) this.page++; this.$emit('page-changed', this.page) },
+    prevPage() { if(this.page > 1) this.page--; this.$emit('page-changed', this.page) }
   }
 }
 </script>
 
 <style scoped>
-.recipe-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  justify-content: center;
-  padding: 10px;
+.recipe-page { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+.recipes-title {
+  font-size: 1.75rem;
+  font-weight: bold;
+  background: linear-gradient(to right, #FF8C00, #FFD700);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 16px;
 }
-
-/* Kártya */
+.controls-left { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+.search-input { width: 250px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+.recipe-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
 .recipe-card {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 165, 0, 0.5),   /* halványabb narancs fent */
-    rgba(255, 165, 0, 0.05)   /* majdnem átlátszó narancs lent */
-  );
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  min-height: 280px;
-  max-height: 450px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.4s ease;
-  opacity: 0;
-  animation: fadeIn 0.6s forwards;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  min-height: 280px; max-height: 450px; padding: 20px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 165, 0, 0.5), rgba(255, 165, 0, 0.05));
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
-
-
-
-/* Fade-in animáció */
-@keyframes fadeIn {
-  to { opacity: 1; }
-}
-
-/* Hover effekt */
-.recipe-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-}
-
-/* Recept kép */
-.recipe-image-wrapper {
-  width: 100%;
-  height: 150px;
-  margin-bottom: 10px;
-  border-radius: 12px 12px 0 0;
-  overflow: hidden;
-}
-.recipe-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* "Nincs kép" felirat */
-.recipe-no-image {
-  width: 100%;
-  height: 150px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0f0;
-  color: #888;
-  font-size: 0.9rem;
-  border-radius: 12px 12px 0 0;
-  margin-bottom: 10px;
-  opacity: 0;
-  animation: fadeIn 0.6s forwards;
-}
-
-/* Recept címe */
-.recipe-title {
-  margin: 0 0 8px 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #4a4a4a;
-  display: flex;
-  align-items: center;
-}
-
-.recipe-title-link{
-    color: inherit;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-}
-
-/* Ikon a cím előtt */
-.recipe-title .recipe-icon {
-  margin-right: 6px;
-  color: white;
-  font-size: 1.2rem;
-}
-
-/* Hozzávalók */
-.recipe-ingredients {
-  margin: 4px 0 0 0;
-  font-size: 0.9rem;
-}
-
-/* Leírás wrapper - scroll alul */
-.recipe-description-wrapper {
-  margin-top: auto;
-  max-height: 120px;
-  overflow-y: auto;
-  border-top: 1px solid rgba(0,0,0,0.1);
-  padding-top: 6px;
-  scroll-behavior: smooth;
-}
-
-/* Szebb scroll sáv (Webkit) */
-.recipe-description-wrapper::-webkit-scrollbar {
-  width: 6px;
-}
-.recipe-description-wrapper::-webkit-scrollbar-track {
-  background: rgba(0, 128, 0, 0.05);
-  border-radius: 3px;
-}
-.recipe-description-wrapper::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #a8e6cf, #56ab2f);
-  border-radius: 3px;
-  transition: background 0.2s ease;
-}
-.recipe-description-wrapper::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #56ab2f, #a8e6cf);
-}
-
-/* Firefox scroll */
-.recipe-description-wrapper {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(86, 171, 47, 0.7) rgba(168, 230, 207, 0.1);
-}
-
-/* Leírás */
-.recipe-description {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-/* Szerző */
-.recipe-author {
-  margin-top: 8px;
-  font-size: 0.85rem;
-  color: #555;
-  text-align: right;
-}
-
-/* Mobilbarát finomítások */
+.recipe-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 12px 20px rgba(0,0,0,0.2); }
+.recipe-image-wrapper { width: 100%; height: 150px; overflow: hidden; border-radius: 10px; margin-bottom: 10px; }
+.recipe-image-wrapper img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.recipe-no-image { width: 100%; height: 150px; display: flex; align-items: center; justify-content: center; background: #eee; color: #888; font-weight: bold; border-radius: 10px; margin-bottom: 10px; }
+.recipe-title { font-weight: bold; margin-bottom: 8px; }
+.recipe-title-link { color: inherit; text-decoration: none; }
+.recipe-description { flex: 1; margin: 10px 0; padding-right: 5px; }
+.ingredients-scroll { max-height: 50px; overflow-y: auto; }
+.ingredients { font-size: 0.9rem; margin-top: 5px; }
+.author-info { display: flex; align-items: center; font-size: 0.875rem; color: #555; margin-top: 10px; }
+.author-icon { margin-right: 5px; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
+.pagination button { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; background: linear-gradient(to right, #FF8C00, #FFD700); color: white; font-weight: 500; }
+.pagination button:disabled { background: #ccc; cursor: not-allowed; }
 @media (max-width: 600px) {
-  .recipe-card {
-    min-height: 220px;
-    padding: 16px;
-  }
-  .recipe-title {
-    font-size: 1.1rem;
-  }
-  .recipe-description-wrapper {
-    max-height: 100px;
-  }
-  .recipe-image-wrapper,
-  .recipe-no-image {
-    height: 120px;
-  }
+  .recipe-card { min-height: 220px; padding: 16px; }
+  .recipe-title { font-size: 1.1rem; }
+  .recipe-image-wrapper, .recipe-no-image { height: 120px; }
+  .ingredients-scroll { max-height: 40px; }
 }
 </style>

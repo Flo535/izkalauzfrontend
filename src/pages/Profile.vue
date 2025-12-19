@@ -38,6 +38,13 @@
       </div>
     </div>
 
+    <!-- LAPOZÓ -->
+    <div class="pagination">
+      <button @click="page--" :disabled="page === 1">⬅ Előző</button>
+      <span>{{ page }} / {{ Math.ceil(totalCount / pageSize) }}</span>
+      <button @click="page++" :disabled="page * pageSize >= totalCount">Következő ➡</button>
+    </div>
+
     <!-- Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="showModal=false">
       <div class="modal">
@@ -66,7 +73,10 @@ export default {
       error: null,
       showModal: false,
       newRecipe: { title: '', description: '', ingredients: '' },
-      fetchDone: false
+      fetchDone: false,
+      page: 1,
+      pageSize: 10,
+      totalCount: 0
     }
   },
   computed: {
@@ -93,6 +103,11 @@ export default {
       this.fetchDone = true
     }
   },
+  watch: {
+    page() {
+      this.fetchRecipes()
+    }
+  },
   methods: {
     fullImagePath(path) {
       if (!path) return null
@@ -113,10 +128,12 @@ export default {
         const token = localStorage.getItem('token')
         if (!token) return this.$router.push('/login')
 
-        const res = await axios.get('https://localhost:5150/api/Recipes/my', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        this.myRecipes = res.data
+        const res = await axios.get(
+          `https://localhost:5150/api/Recipes/my?page=${this.page}&pageSize=${this.pageSize}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        )
+        this.myRecipes = res.data.items
+        this.totalCount = res.data.totalCount
       } catch (err) {
         if (err.response?.status === 401) {
           localStorage.removeItem('token')
@@ -182,7 +199,6 @@ export default {
   margin: 80px auto; 
   padding: 0 20px; 
 }
-
 .my-recipes-title {
   font-size: 1.75rem;
   font-weight: bold;
@@ -192,7 +208,6 @@ export default {
   color: transparent;
   margin-bottom: 16px;
 }
-
 .controls-left { 
   display: flex; 
   flex-direction: column; 
@@ -200,14 +215,12 @@ export default {
   gap: 8px; 
   margin-bottom: 20px; 
 }
-
 .search-input { 
   width: 200px; 
   padding: 8px; 
   border-radius: 5px; 
   border: 1px solid #ccc; 
 }
-
 .add-button {
   padding: 8px 12px;
   border-radius: 5px;
@@ -215,7 +228,7 @@ export default {
   cursor: pointer;
   font-weight: 500;
   color: #fff;
-  background: linear-gradient(to right, #FF8C00, #FFD700);
+  background: linear-gradient(to right, #FF4500, #FFA500); /* piros → narancs */
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 .add-button:hover {
@@ -223,50 +236,49 @@ export default {
   transform: translateY(-2px);
 }
 
-.recipe-list { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 18px; 
-  overflow: visible;  
+/* FIX GRID és kártya méret */
+.recipe-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: flex-start; /* kártyák balra rendezve */
 }
 
 .recipe-card {
-  position: relative; /* a hover z-index-hez */
+  flex: 0 0 20%; /* keskenyebb, hogy 4 férjen egy sorban, kis rés marad a gap-nek */
+  height: 350px; /* fix magasság */
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  min-height: 280px;
-  max-height: 450px;
+  justify-content: space-between;
   padding: 20px;
   border-radius: 16px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 165, 0, 0.5),
-    rgba(255, 165, 0, 0.05)
-  );
+  background: linear-gradient(180deg, rgba(255, 165, 0, 0.5), rgba(255, 165, 0, 0.05));
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease, opacity 0.4s ease;
-  opacity: 1; /* ne tűnjön el */
-  z-index: 1;
 }
 
-.recipe-card * {
-  position: relative; /* biztosítja, hogy a szövegek a gradient fölött legyenek */
-  z-index: 2;
+.recipe-description-wrapper {
+  flex: 1; /* maradék helyet tölti ki a leírás */
+  max-height: 120px; /* fix max magasság a scrollhoz */
+  overflow-y: auto;
+  margin-bottom: 10px;
 }
+
+.card-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 
 .recipe-card:hover {
-  transform: translateY(-8px) scale(1.02);
+  transform: translateY(-6px) scale(1.02);
   box-shadow: 0 12px 20px rgba(0,0,0,0.2);
   filter: brightness(1.05);
-  z-index: 3;
 }
-
-
-
 .recipe-image-wrapper { 
   width: 100%; 
-  height: 150px; 
+  height: 120px; 
   overflow: hidden; 
   border-radius: 10px; 
   margin-bottom: 10px; 
@@ -275,11 +287,10 @@ export default {
   width: 100%; 
   height: 100%; 
   object-fit: cover; 
-  display: block; 
 }
 .recipe-no-image { 
   width: 100%; 
-  height: 150px; 
+  height: 120px; 
   display: flex; 
   align-items: center; 
   justify-content: center; 
@@ -289,24 +300,15 @@ export default {
   border-radius: 10px; 
   margin-bottom: 10px; 
 }
-
 .recipe-title { font-weight: bold; margin-bottom: 8px; }
-.recipe-description { flex: 1; overflow-y: auto; margin: 10px 0; padding-right: 5px; }
+.recipe-description { flex: 1; overflow-y: auto; margin: 10px 0; padding-right: 5px; max-height: 60px; }
 .ingredients-scroll { max-height: 50px; overflow-y: auto; }
 .ingredients { font-size: 0.9rem; margin-top: 5px; }
-
-.author-info { 
-  display: flex; 
-  align-items: center; 
-  font-size: 0.875rem; 
-  color: #555; 
-  margin-top: 10px; 
-}
+.author-info { display: flex; align-items: center; font-size: 0.875rem; color: #555; margin-top: 10px; }
 .author-icon { margin-right: 5px; }
-
 .card-buttons { display: flex; gap: 10px; margin-top: 10px; }
-.edit-btn { background-color: #a3d9a5; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
-.delete-btn { background-color: #ffc107; border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
+.edit-btn { background: linear-gradient(to right, #FFD700, #FF8C00); border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
+.delete-btn { background: linear-gradient(to right, #FF4500, #FFA500); border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
 
 .fade-in { animation: fadeIn 0.5s ease forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -315,4 +317,26 @@ export default {
 .modal { background: #fff; padding: 20px; border-radius: 10px; max-width: 400px; width: 90%; }
 .modal-input, .modal-textarea { display: block; width: 100%; margin: 5px 0; padding: 5px; }
 .modal-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+
+/* LAPOZÓ STÍLUS */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+.pagination button {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(to right, #FF8C00, #FFD700);
+  color: white;
+  font-weight: 500;
+}
+.pagination button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
 </style>
