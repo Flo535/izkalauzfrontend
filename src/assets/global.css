@@ -1,0 +1,99 @@
+/* === Global Styles === */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+
+/* Alap betűcsalád */
+body {
+  font-family: 'Playfair Display', serif;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: #2c3e50;
+}
+
+/* Külön belső wrapper, hogy a navbar vagy más komponensek ne legyenek középre feszítve */
+#app {
+  width: 100%;
+}
+
+/* Átlátszó form container (pl.: login, register) */
+.form-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 30px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  
+  .fancy-background {
+  background-color: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(2px); /* Safari */
+  backdrop-filter: blur(2px); /* Chrome, Firefox */
+}
+
+}
+
+/* Alap címsor */
+h1, h2 {
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+}
+
+/* Űrlap elemek */
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: bold;
+  color: #333;
+}
+
+input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  box-sizing: border-box;
+}
+
+/* Gomb */
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #976212;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #e2e610ef;
+}
+
+/* Hibák, sikerüzenetek */
+.error {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.success {
+  color: green;
+  margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
+}
