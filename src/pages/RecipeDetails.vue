@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div v-if="loading" class="loading">
     ⏳ Recept betöltése...
   </div>
@@ -51,6 +52,54 @@
       </p>
     </section>
   </div>
+=======
+    <div v-if="loading" class="loading">
+      ⏳ Recept betöltése...
+    </div>
+
+    <div v-else-if="error" class="error">
+      ❌ {{ error }}
+    </div>
+
+    <div v-else class="recipe-details">
+      <!-- Kép -->
+      <div v-if="recipe.imagePath" class="image-wrapper">
+        <img
+          :src="fullImagePath(recipe.imagePath)"
+          :alt="recipe.title"
+        />
+      </div>
+
+      <!-- Cím -->
+      <h1 class="title">
+        {{ recipe.title }}
+      </h1>
+
+      <!-- Meta adatok -->
+      <div class="meta">
+        <span>👤 {{ recipe.authorEmail }}</span>
+        <span>📅 {{ formattedDate(recipe.createdAt) }}</span>
+      </div>
+
+      <!-- Hozzávalók -->
+      <section class="section">
+        <h2>🧂 Hozzávalók</h2>
+        <ul>
+          <li v-for="(item, index) in recipe.ingredients" :key="index">
+            {{ item }}
+          </li>
+        </ul>
+      </section>
+
+      <!-- Elkészítés -->
+      <section class="section">
+        <h2>📖 Elkészítés</h2>
+        <p class="description">
+          {{ recipe.howToText }}
+        </p>
+      </section>
+    </div>
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
 </template>
 
 <script>
@@ -58,26 +107,51 @@ import SidebarLayout from '@/components/Layout/SidebarLayout.vue'
 
 export default {
   name: 'RecipeDetails',
+<<<<<<< HEAD
   components: { SidebarLayout },
+=======
+  components: {
+    SidebarLayout
+  },
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
   data() {
     return {
       recipe: null,
       loading: true,
+<<<<<<< HEAD
       error: null,
       selectedFile: null,
       isAdmin: false
+=======
+      error: null
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
     }
   },
   mounted() {
     this.fetchRecipe()
+<<<<<<< HEAD
     this.checkAdmin()
+=======
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
   },
   methods: {
     async fetchRecipe() {
       try {
         const id = this.$route.params.id
+<<<<<<< HEAD
         const response = await fetch(`https://localhost:5150/api/Recipes/${id}`)
         if (!response.ok) throw new Error('Recept nem található')
+=======
+
+        const response = await fetch(
+          `https://localhost:5150/api/Recipes/${id}`
+        )
+
+        if (!response.ok) {
+          throw new Error('Recept nem található')
+        }
+
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
         this.recipe = await response.json()
       } catch (err) {
         this.error = err.message
@@ -85,6 +159,7 @@ export default {
         this.loading = false
       }
     },
+<<<<<<< HEAD
 
     checkAdmin() {
       const token = localStorage.getItem('token')
@@ -145,6 +220,11 @@ export default {
     return `https://localhost:5150/${path.replace(/\\/g, '/')}`;
     },
 
+=======
+    fullImagePath(path) {
+      return `https://localhost:5150/${path.replace(/\\/g, '/')}`
+    },
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
     formattedDate(date) {
       return new Date(date).toLocaleDateString('hu-HU')
     }
@@ -174,6 +254,7 @@ export default {
   object-fit: cover;
 }
 
+<<<<<<< HEAD
 /* Admin feltöltés */
 .upload-section {
   margin-bottom: 20px;
@@ -181,12 +262,17 @@ export default {
   gap: 10px;
 }
 
+=======
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
 /* Cím */
 .title {
   font-size: 2rem;
   margin-bottom: 10px;
   background: linear-gradient(to right, #ff8c00, #ffbb33);
+<<<<<<< HEAD
   background-clip: text;
+=======
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -237,7 +323,18 @@ export default {
 
 /* Animáció */
 @keyframes fadeIn {
+<<<<<<< HEAD
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+=======
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+>>>>>>> dc98102161dde86b905120db2bbda4391ad41a24
 }
 </style>
