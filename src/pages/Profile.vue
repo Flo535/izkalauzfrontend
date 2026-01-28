@@ -36,7 +36,10 @@
         </div>
 
         <div class="card-buttons">
-          <button class="edit-btn" @click="editRecipe(recipe)">Szerkesztés</button>
+          <button class="edit-btn" @click="$router.push({ name: 'EditRecipe', params: { id: recipe.id } })">
+            Szerkesztés
+          </button>
+
           <button class="delete-btn" @click="deleteRecipe(recipe.id)">Törlés</button>
         </div>
       </div>

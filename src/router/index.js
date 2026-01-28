@@ -24,6 +24,8 @@ const routes = [
   { path: '/register', component: Register },
   { path: '/profile', component: Profile },
   { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe }, // <-- új route
+  { path: '/edit-recipe/:id',  name: 'EditRecipe',  component: () => import('@/pages/EditRecipe.vue')  },
+
   { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
   { path: '/recept/:id', component: RecipeDetails }
 ]
