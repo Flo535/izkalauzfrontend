@@ -11,6 +11,7 @@ import Register from '../pages/Register.vue'
 import Profile from '../pages/Profile.vue'
 import AdminUsers from '../pages/AdminUsers.vue'
 import RecipeDetails from '../pages/RecipeDetails.vue'
+import NewRecipe from '../pages/NewRecipe.vue' // <-- új oldal importálva
 
 const routes = [
   { path: '/', component: Home },
@@ -22,6 +23,7 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   { path: '/profile', component: Profile },
+  { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe }, // <-- új route
   { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
   { path: '/recept/:id', component: RecipeDetails }
 ]
