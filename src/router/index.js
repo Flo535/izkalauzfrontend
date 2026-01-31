@@ -11,6 +11,11 @@ import Register from '../pages/Register.vue'
 import Profile from '../pages/Profile.vue'
 import AdminUsers from '../pages/AdminUsers.vue'
 import RecipeDetails from '../pages/RecipeDetails.vue'
+<<<<<<< HEAD
+=======
+import NewRecipe from '../pages/NewRecipe.vue'
+import EditRecipe from '@/pages/EditRecipe.vue'
+>>>>>>> fce3b7e (David-update)
 
 const routes = [
   { path: '/', component: Home },
@@ -22,6 +27,12 @@ const routes = [
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   { path: '/profile', component: Profile },
+<<<<<<< HEAD
+=======
+  { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe }, // <-- új route
+  { path: '/edit-recipe/:id',  name: 'EditRecipe',  component: EditRecipe },
+
+>>>>>>> fce3b7e (David-update)
   { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
   { path: '/recept/:id', component: RecipeDetails }
 ]

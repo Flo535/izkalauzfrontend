@@ -3,7 +3,15 @@
     <h2 class="my-recipes-title">Saját receptjeim:</h2>
 
     <div class="controls-left">
+<<<<<<< HEAD
       <button class="add-button" @click="showModal = true">Új recept hozzáadása</button>
+=======
+      <!-- Új recept oldalra navigáló gomb -->
+      <button class="add-button" @click="$router.push({ name: 'NewRecipe' })">
+        Új recept hozzáadása
+      </button>
+
+>>>>>>> fce3b7e (David-update)
       <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
@@ -23,7 +31,11 @@
         <p class="recipe-description">{{ recipe.description }}</p>
 
         <div class="ingredients-scroll">
+<<<<<<< HEAD
           <p class="ingredients"><strong>Hozzávalók:</strong> {{ recipe.ingredients.join(', ') }}</p>
+=======
+          <p class="ingredients"><strong>Hozzávalók:</strong> {{ formatIngredients(recipe.ingredients) }}</p>
+>>>>>>> fce3b7e (David-update)
         </div>
 
         <div class="author-info">
@@ -32,7 +44,14 @@
         </div>
 
         <div class="card-buttons">
+<<<<<<< HEAD
           <button class="edit-btn" @click="editRecipe(recipe)">Szerkesztés</button>
+=======
+          <button class="edit-btn" @click="$router.push({ name: 'EditRecipe', params: { id: recipe.id } })">
+            Szerkesztés
+          </button>
+
+>>>>>>> fce3b7e (David-update)
           <button class="delete-btn" @click="deleteRecipe(recipe.id)">Törlés</button>
         </div>
       </div>
@@ -44,6 +63,7 @@
       <span>{{ page }} / {{ Math.ceil(totalCount / pageSize) }}</span>
       <button @click="page++" :disabled="page * pageSize >= totalCount">Következő ➡</button>
     </div>
+<<<<<<< HEAD
 
     <!-- Modal -->
     <div v-if="showModal" class="modal-overlay" @click.self="showModal=false">
@@ -60,6 +80,8 @@
         </div>
       </div>
     </div>
+=======
+>>>>>>> fce3b7e (David-update)
   </div>
 </template>
 
@@ -73,6 +95,7 @@ export default {
       myRecipes: [],
       searchTerm: '',
       error: null,
+<<<<<<< HEAD
 
       showModal: false,
       isEditMode: false,
@@ -83,6 +106,12 @@ export default {
       page: 1,
       pageSize: 10,
       totalCount: 0
+=======
+      page: 1,
+      pageSize: 10,
+      totalCount: 0,
+      fetchDone: false
+>>>>>>> fce3b7e (David-update)
     }
   },
   computed: {
@@ -129,6 +158,29 @@ export default {
         wrapper.appendChild(noImageDiv)
       }
     },
+<<<<<<< HEAD
+=======
+
+    formatIngredients(ingredients) {
+      if (!ingredients || ingredients.length === 0) return 'Nincs megadva'
+      
+      // Ellenőrizzük, hogy objektumok-e vagy stringek
+      if (typeof ingredients[0] === 'string') {
+        return ingredients.join(', ')
+      }
+      
+      // Ha objektumok, formázzuk őket
+      return ingredients
+        .map(ing => {
+          if (ing.name && ing.quantity && ing.unit) {
+            return `${ing.name} (${ing.quantity} ${ing.unit})`
+          }
+          return ing.name || 'Ismeretlen'
+        })
+        .join(', ')
+    },
+
+>>>>>>> fce3b7e (David-update)
     async fetchRecipes() {
       try {
         const token = localStorage.getItem('token')
@@ -147,6 +199,7 @@ export default {
         } else this.error = err.response?.data?.message || 'Hiba a receptek lekérésekor.'
       }
     },
+<<<<<<< HEAD
     async addRecipe() {
       try {
         const token = localStorage.getItem('token')
@@ -234,6 +287,13 @@ export default {
     },
 
 
+=======
+
+    editRecipe(recipe) {
+      this.$router.push(`/recept/szerkesztes/${recipe.id}`)
+    },
+
+>>>>>>> fce3b7e (David-update)
     async deleteRecipe(id) {
       if (!confirm('Biztos törlöd a receptet?')) return
       try {
@@ -285,25 +345,40 @@ export default {
   cursor: pointer;
   font-weight: 500;
   color: #fff;
+<<<<<<< HEAD
   background: linear-gradient(to right, #FF4500, #FFA500); /* piros → narancs */
+=======
+  background: linear-gradient(to right, #FF4500, #FFA500);
+>>>>>>> fce3b7e (David-update)
   transition: transform 0.2s ease, filter 0.2s ease;
 }
 .add-button:hover {
   filter: brightness(1.1);
   transform: translateY(-2px);
 }
+<<<<<<< HEAD
 
 /* FIX GRID és kártya méret */
+=======
+>>>>>>> fce3b7e (David-update)
 .recipe-list {
   display: flex;
   flex-wrap: wrap;
   gap: 20px;
+<<<<<<< HEAD
   justify-content: flex-start; /* kártyák balra rendezve */
 }
 
 .recipe-card {
   flex: 0 0 20%; /* keskenyebb, hogy 4 férjen egy sorban, kis rés marad a gap-nek */
   height: 350px; /* fix magasság */
+=======
+  justify-content: flex-start;
+}
+.recipe-card {
+  flex: 0 0 20%;
+  height: 350px;
+>>>>>>> fce3b7e (David-update)
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -313,6 +388,7 @@ export default {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease, opacity 0.4s ease;
 }
+<<<<<<< HEAD
 
 .recipe-description-wrapper {
   flex: 1; /* maradék helyet tölti ki a leírás */
@@ -335,6 +411,8 @@ export default {
 }
 
 
+=======
+>>>>>>> fce3b7e (David-update)
 .recipe-card:hover {
   transform: translateY(-6px) scale(1.02);
   box-shadow: 0 12px 20px rgba(0,0,0,0.2);
@@ -373,6 +451,7 @@ export default {
 .card-buttons { display: flex; gap: 10px; margin-top: 10px; }
 .edit-btn { background: linear-gradient(to right, #FFD700, #FF8C00); border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
 .delete-btn { background: linear-gradient(to right, #FF4500, #FFA500); border: none; padding: 6px 10px; border-radius: 5px; cursor: pointer; color: white; }
+<<<<<<< HEAD
 
 .fade-in { animation: fadeIn 0.5s ease forwards; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -403,4 +482,11 @@ export default {
   background: #ccc;
   cursor: not-allowed;
 }
+=======
+.fade-in { animation: fadeIn 0.5s ease forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 20px; }
+.pagination button { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; background: linear-gradient(to right, #FF8C00, #FFD700); color: white; font-weight: 500; }
+.pagination button:disabled { background: #ccc; cursor: not-allowed; }
+>>>>>>> fce3b7e (David-update)
 </style>

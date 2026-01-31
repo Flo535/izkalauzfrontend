@@ -32,7 +32,11 @@
         <p class="recipe-description">{{ recipe.description }}</p>
 
         <div class="ingredients-scroll">
+<<<<<<< HEAD
           <p class="ingredients"><strong>Hozzávalók:</strong> {{ recipe.ingredients.join(', ') }}</p>
+=======
+          <p class="ingredients"><strong>Hozzávalók:</strong> {{ formatIngredients(recipe.ingredients) }}</p>
+>>>>>>> fce3b7e (David-update)
         </div>
 
         <div class="author-info">
@@ -116,6 +120,30 @@ export default {
       const input = document.getElementById('file-' + recipe.id)
       if (input) input.click()
     },
+<<<<<<< HEAD
+=======
+
+    formatIngredients(ingredients) {
+      if (!ingredients || ingredients.length === 0) return 'Nincs megadva'
+      
+      // Ellenőrizzük, hogy objektumok-e vagy stringek
+      if (typeof ingredients[0] === 'string') {
+        return ingredients.join(', ')
+      }
+      
+      // Ha objektumok, formázzuk őket
+      return ingredients
+        .map(ing => {
+          if (ing.name && ing.quantity && ing.unit) {
+            return `${ing.name} (${ing.quantity} ${ing.unit})`
+          }
+          return ing.name || 'Ismeretlen'
+        })
+        .join(', ')
+    },
+
+
+>>>>>>> fce3b7e (David-update)
     async uploadImage(event, recipe) {
       const file = event.target.files[0]
       if (!file) return

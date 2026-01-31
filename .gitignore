@@ -25,4 +25,8 @@ yarn-error.log*
 pnpm-debug.log*
 
 # Optional: temporary files
+<<<<<<< HEAD
 *.tmp
+=======
+*.tmp
+>>>>>>> fce3b7e (David-update)
