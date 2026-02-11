@@ -1,181 +1,152 @@
 <template>
   <nav class="navbar">
-    <!-- LOGÓ -->
-    <router-link to="/" class="logo" @click="closeMenu">
-      <span class="icon">🍲</span>
-      <span class="text">ÍzKalauz</span>
-    </router-link>
+    <div class="nav-right">
 
-    <!-- HAMBURGER MENU MOBILRA -->
-    <button class="menu-toggle" @click="toggleMenu">
-      <span :class="{ open: isOpen }"></span>
-      <span :class="{ open: isOpen }"></span>
-      <span :class="{ open: isOpen }"></span>
-    </button>
+      <!-- Ha nincs bejelentkezve -->
+      <template v-if="!user">
+        <router-link to="/login" class="nav-btn admin-style">Bejelentkezés</router-link>
+        <router-link to="/register" class="nav-btn user-style">Regisztráció</router-link>
+      </template>
 
-    <!-- MENÜ -->
-    <ul :class="['nav-links', { open: isOpen }]">
-      <!-- BAL OLDAL PONTOK -->
-      <li><router-link to="/" @click="closeMenu">🏠 Kezdőlap</router-link></li>
-      <li><router-link to="/recipes" @click="closeMenu">🍽 Receptek</router-link></li>
+      <!-- Ha be van jelentkezve -->
+      <template v-else>
+        <span class="welcome">
+          Szép napot kívánok, {{ user.isAdmin ? 'Admin' : 'Felhasználó' }}!
+        </span>
 
-      <li class="spacer"></li>
+        <router-link
+          v-if="user.isAdmin"
+          to="/admin"
+          class="nav-btn admin-style"
+        >
+          Admin
+        </router-link>
 
-      <!-- JOBB OLDAL -->
-      <li v-if="!isLoggedIn">
-        <router-link to="/login" @click="closeMenu">Bejelentkezés</router-link>
-      </li>
-      <li v-if="!isLoggedIn">
-        <router-link to="/register" @click="closeMenu">Regisztráció</router-link>
-      </li>
-      <li v-if="isLoggedIn">
-        <router-link to="/profile" @click="closeMenu">Profil</router-link>
-      </li>
-      <li v-if="isAdmin">
-        <router-link to="/admin" @click="closeMenu">Admin</router-link>
-      </li>
-      <li v-if="isLoggedIn">
-        <a href="#" @click.prevent="logout">Kijelentkezés</a>
-      </li>
-    </ul>
+        <button @click="logout" class="nav-btn user-style">Kijelentkezés</button>
+      </template>
+
+    </div>
   </nav>
 </template>
 
 <script>
-import { authState, clearAuth } from '../auth.js'
-
 export default {
-  name: 'Navbar',
-  data() { return { isOpen: false } },
-  computed: {
-    isLoggedIn() { return authState.isLoggedIn },
-    isAdmin() { return authState.isAdmin }
+  data() {
+    return { user: null }
+  },
+  mounted() {
+    this.loadUser()
+    window.addEventListener("storage", this.loadUser)
+  },
+  beforeUnmount() {
+    window.removeEventListener("storage", this.loadUser)
   },
   methods: {
-    toggleMenu() { this.isOpen = !this.isOpen },
-    closeMenu() { this.isOpen = false },
+    loadUser() {
+      const token = localStorage.getItem("token")
+      if (!token) { this.user = null; return }
+
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        const role = payload.role || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
+
+        this.user = {
+          role: role,
+          isAdmin: role?.toLowerCase() === "admin"
+        }
+      } catch { this.user = null }
+    },
     logout() {
-      clearAuth()
-      this.isOpen = false
-      this.$router.push('/login')
+      localStorage.removeItem("token")
+      this.user = null
+      this.$router.push("/")
     }
+  },
+  watch: {
+    $route() { this.loadUser() }
   }
 }
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+
 .navbar {
-  background: #fff8e8;
-  backdrop-filter: blur(10px);
+  width: 100%;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 22px;
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  justify-content: center;
+  backdrop-filter: blur(12px);
+  background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  font-family: 'Playfair Display', serif;
 }
 
-/* LOGÓ */
-.navbar .logo {
+.nav-right {
+  width: 100%;
+  max-width: 1400px;
+  height: 80px;
   display: flex;
+  justify-content: flex-end;
   align-items: center;
-  gap: 4px;
-  text-decoration: none;
-  transition: transform 0.25s ease, filter 0.25s ease;
+  gap: 20px;
+  padding: 0 40px;
 }
 
-.navbar .logo .icon { font-size: 28px; line-height: 1; }
+.welcome {
+  font-size: 0.9rem;
+  font-style: italic;
+  letter-spacing: 1px;
 
-.navbar .logo .text {
-  font-size: 1.42rem;
-  font-weight: 800;
-  background: linear-gradient(45deg, #ff4d2a, #ffcc66);
-  background-clip: text;        /* standard property */
-  -webkit-background-clip: text; /* WebKit */
-  color: transparent;
-  text-shadow: 0 0 2px rgba(255, 190, 120, 0.5);
-}
-
-.navbar .logo:hover {
-  transform: scale(1.06);
-  filter: brightness(1.15);
-}
-
-/* MENÜ */
-.nav-links {
-  display: flex;
-  list-style: none;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  align-items: center;
-}
-
-.nav-links a {
-  text-decoration: none;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 6px;
-  transition: all 0.25s ease, transform 0.3s ease;
-  display: inline-block;
-  background: linear-gradient(90deg, #e67e22, #f1c40f);
-  background-clip: text;          /* standard property */
-  -webkit-background-clip: text;  /* WebKit */
+  /* finom arany-narancs átmenet */
+  background: linear-gradient(90deg, #ffd17a, #ffb84d);
+  background-clip: text;           /* standard tulajdonság */
+  -webkit-background-clip: text;   /* webkit böngészők */
   -webkit-text-fill-color: transparent;
+
+  /* árnyék, hogy a szöveg jobban látszódjon a háttéren */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
 }
 
-.nav-links a:hover {
-  transform: scale(1.07);
-  background-color: rgba(0, 180, 0, 0.16);
-  -webkit-text-fill-color: #d35400;
-}
 
-.spacer { flex: 1 }
 
-/* Hamburger */
-.menu-toggle {
-  display: none;
-  flex-direction: column;
-  gap: 5px;
-  background: none;
+/* Alap gombstílus minden gombnak */
+.nav-btn {
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 8px 22px;
+  border-radius: 25px;
   border: none;
   cursor: pointer;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.5s ease;
+  font-family: 'Playfair Display', serif;
 }
 
-.menu-toggle span {
-  display: block;
-  width: 26px;
-  height: 3px;
-  background: #4b3b2e;
-  border-radius: 3px;
-  transition: all 0.3s ease;
+/* Hover effekt minden gombnak */
+.nav-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
 }
 
-.menu-toggle span.open:nth-child(1) {
-  transform: rotate(45deg) translate(5px, 5px);
-}
-.menu-toggle span.open:nth-child(2) { opacity: 0; }
-.menu-toggle span.open:nth-child(3) {
-  transform: rotate(-45deg) translate(6px, -6px);
+/* Admin és Bejelentkezés stílus - arany-bronz csillogó */
+.admin-style {
+  background: linear-gradient(135deg, #f9d976, #f39c12);
+  color: #fff;
+  text-shadow: 0 0 2px rgba(255,255,255,0.3);
 }
 
-/* MOBIL */
+/* Regisztráció és Kijelentkezés stílus - csillogó barna */
+.user-style {
+  background: linear-gradient(135deg, #a17c5a, #c49b6c); /* barna-arany */
+  color: #fff;
+  text-shadow: 0 0 1px rgba(255,255,255,0.2);
+}
+
+/* Mobil nézet */
 @media (max-width: 768px) {
-  .menu-toggle { display: flex; }
-  .nav-links {
-    position: absolute;
-    top: 100%; left: 0; right: 0;
-    flex-direction: column;
-    background: #fff8e8;
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: all 0.3s ease;
-  }
-  .nav-links.open { max-height: 500px; opacity: 1; }
-  .nav-links li { margin: 10px 0; text-align: center; }
-  .spacer { display: none; }
+  .nav-right { gap: 12px; }
+  .nav-btn { font-size: 0.85rem; padding: 6px 16px; }
+  .welcome { font-size: 0.85rem; }
 }
 </style>

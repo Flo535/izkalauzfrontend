@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 // Oldalak importálása
 import Home from '../pages/Home.vue'
-import Recipes from '../pages/Recipe.vue'
+import Recipes from '../pages/Recipe.vue'       // pontos fájlnév
 import Favorites from '../pages/Favorites.vue'
 import Cart from '../pages/Cart.vue'
 import Menu from '../pages/Menu.vue'
@@ -11,28 +11,21 @@ import Register from '../pages/Register.vue'
 import Profile from '../pages/Profile.vue'
 import AdminUsers from '../pages/AdminUsers.vue'
 import RecipeDetails from '../pages/RecipeDetails.vue'
-<<<<<<< HEAD
-=======
 import NewRecipe from '../pages/NewRecipe.vue'
-import EditRecipe from '@/pages/EditRecipe.vue'
->>>>>>> fce3b7e (David-update)
+import EditRecipe from '../pages/EditRecipe.vue'
 
 const routes = [
   { path: '/', component: Home },
   { path: '/recipes', component: Recipes },
-  { path: '/receptek', component: Recipes }, // magyar URL
+  { path: '/receptek', component: Recipes },  // magyar URL
   { path: '/kedvencek', component: Favorites },
   { path: '/vasarlas', component: Cart, meta: { requiresAuth: true } },
   { path: '/menu', component: Menu },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
   { path: '/profile', component: Profile },
-<<<<<<< HEAD
-=======
-  { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe }, // <-- új route
-  { path: '/edit-recipe/:id',  name: 'EditRecipe',  component: EditRecipe },
-
->>>>>>> fce3b7e (David-update)
+  { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe },
+  { path: '/edit-recipe/:id', name: 'EditRecipe', component: EditRecipe },
   { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
   { path: '/recept/:id', component: RecipeDetails }
 ]
