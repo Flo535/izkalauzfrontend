@@ -9,10 +9,10 @@
         <img :src="fullImagePath(recipe.imagePath)" :alt="recipe.title" />
       </div>
 
-      <!-- Admin-only feltöltő gomb -->
-      <div v-if="isAdmin" class="upload-section">
-        <input type="file" @change="handleFileChange" />
-        <button @click="uploadImage">Feltöltés</button>
+      <!-- KÉPFELTÖLTÉS (Admin minden recepthez, user csak sajáthoz) -->
+      <div v-if="canUpload" class="upload-section">
+        <input type="file" @change="handleFileChange" class="upload-input"/>
+        <button class="upload-btn" @click="uploadImage">📤 Kép feltöltése</button>
       </div>
 
       <!-- Cím -->
@@ -52,13 +52,22 @@ export default {
       loading: true,
       error: null,
       selectedFile: null,
+      currentUserEmail: null,
       isAdmin: false
     }
   },
+
+  computed: {
+    canUpload() {
+      return this.isAdmin || this.recipe?.authorEmail === this.currentUserEmail
+    }
+  },
+
   mounted() {
     this.fetchRecipe()
-    this.checkAdmin()
+    this.checkUser()
   },
+
   methods: {
     async fetchRecipe() {
       try {
@@ -73,6 +82,20 @@ export default {
       }
     },
 
+    checkUser() {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        this.currentUserEmail = payload['email'] || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress']
+        const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+        this.isAdmin = roleClaim === 'Admin'
+      } catch {
+        this.currentUserEmail = null
+        this.isAdmin = false
+      }
+    },
+
     formatIngredient(item) {
       if (typeof item === 'string') return item
       if (item.name && item.quantity && item.unit) {
@@ -81,32 +104,36 @@ export default {
       return item.name || 'Ismeretlen'
     },
 
-    checkAdmin() {
-      const token = localStorage.getItem('token')
-      if (!token) { this.isAdmin = false; return }
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]))
-        const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
-        this.isAdmin = roleClaim === 'Admin'
-      } catch {
-        this.isAdmin = false
-      }
+    handleFileChange(e) {
+      this.selectedFile = e.target.files[0]
     },
 
-    handleFileChange(e) { this.selectedFile = e.target.files[0] },
-
     async uploadImage() {
-      if (!this.selectedFile) { alert('Válassz ki egy fájlt!'); return }
+      if (!this.selectedFile) {
+        alert('Válassz ki egy fájlt!')
+        return
+      }
+
       const formData = new FormData()
       formData.append('file', this.selectedFile)
+
       const token = localStorage.getItem('token')
+
       try {
-        const response = await fetch(`https://localhost:5150/api/Recipes/${this.recipe.id}/image`, {
-          method: 'POST',
-          body: formData,
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        })
-        if (!response.ok) { alert('Hiba a feltöltésnél'); return }
+        const response = await fetch(
+          `https://localhost:5150/api/Recipes/${this.recipe.id}/image`,
+          {
+            method: 'POST',
+            body: formData,
+            headers: token ? { Authorization: `Bearer ${token}` } : {}
+          }
+        )
+
+        if (!response.ok) {
+          alert('Hiba a feltöltésnél')
+          return
+        }
+
         const data = await response.json()
         this.recipe.imagePath = data.imagePath
         alert('Kép sikeresen feltöltve!')
@@ -115,8 +142,13 @@ export default {
       }
     },
 
-    fullImagePath(path) { return `https://localhost:5150/${path.replace(/\\/g,'/')}` },
-    formattedDate(date) { return new Date(date).toLocaleDateString('hu-HU') }
+    fullImagePath(path) {
+      return `https://localhost:5150/${path.replace(/\\/g, '/')}`
+    },
+
+    formattedDate(date) {
+      return new Date(date).toLocaleDateString('hu-HU')
+    }
   }
 }
 </script>
@@ -125,10 +157,57 @@ export default {
 .recipe-page { padding: 20px; max-width: 900px; margin: 0 auto; }
 .recipe-details { animation: fadeIn 0.5s ease forwards; }
 
-.image-wrapper { width: 100%; height: 280px; overflow: hidden; border-radius: 16px; margin-bottom: 20px; }
-.image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+.image-wrapper {
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  border-radius: 16px;
+  margin-bottom: 20px;
+}
 
-.upload-section { margin-bottom: 20px; display: flex; gap: 10px; }
+.image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.upload-section {
+  margin-bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+/* Gomb és file input egységes stílus */
+.upload-btn, .upload-input {
+  background: linear-gradient(to right, #ff8c00, #ffd700); /* narancs-arany */
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-btn::after, .upload-input::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 10%, transparent 10%);
+  transform: rotate(45deg) translate(-100%, -100%);
+  animation: sparkle 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes sparkle {
+  0% { transform: rotate(45deg) translate(-100%, -100%); }
+  100% { transform: rotate(45deg) translate(100%, 100%); }
+}
 
 .title {
   font-size: 2rem;
@@ -139,9 +218,20 @@ export default {
   -webkit-text-fill-color: transparent;
 }
 
-.meta { display: flex; gap: 20px; font-size: 0.9rem; color: #555; margin-bottom: 20px; }
+.meta {
+  display: flex;
+  gap: 20px;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 20px;
+}
 
-.section { margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(0,0,0,0.1); }
+.section {
+  margin-top: 25px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(0,0,0,0.1);
+}
+
 .section h2 { margin-bottom: 10px; color: #ff8c00; }
 .section ul { padding-left: 20px; }
 .section li { margin-bottom: 6px; }
