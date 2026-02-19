@@ -1,0 +1,32 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build output
+dist/
+out/
+
+# Local env files
+.env
+.env.local
+.env.*.local
+
+# IDE/Editor files
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Optional: temporary files
+<<<<<<< HEAD
+*.tmp
+=======
+*.tmp
+>>>>>>> fce3b7e (David-update)
