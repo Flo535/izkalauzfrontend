@@ -1,32 +1,32 @@
-# Node.js dependencies
+# Függőségek
 node_modules/
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
+.pnpm-store/
 
-# Build output
+# Build kimenet
 dist/
-out/
+dist-ssr/
+*.local
 
-# Local env files
+# IDE (VS Code, WebStorm) beállítások
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Logok
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Környezeti változók (titkos kulcsok)
 .env
 .env.local
 .env.*.local
 
-# IDE/Editor files
-.vscode/
-.idea/
+# Operációs rendszer fájlok
+Thumbs.db
 .DS_Store
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-
-# Optional: temporary files
-<<<<<<< HEAD
-*.tmp
-=======
-*.tmp
->>>>>>> fce3b7e (David-update)

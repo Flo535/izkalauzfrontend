@@ -1,47 +1,51 @@
 <template>
-  <div class="home-container">
-    <!-- Nyitó tartalom -->
-    <section class="intro-section">
-      
-      <h1>Üdvözöl az Íz-kalauz!</h1>
+  <div class="home-wrapper fade-in">
+    <div class="home-container glass-box-orange">
+      <section class="intro-section">
+        <h1 class="glow-title">Üdvözöl az Íz-kalauz!</h1>
 
-      <p>
-        Tervezd meg a heti menüt, mentsd el kedvenc receptjeidet, és fedezz fel új ízeket!
-      </p>
-      
-      <ul class="feature-list">
-        <li>
-          <span class="check check-yellow">🍋</span>
-          <span class="text">Receptek mentése</span>
-        </li>
-        <li>
-          <span class="check check-orange">🫑</span>
-          <span class="text">Heti menü összeállítása</span>
-        </li>
-        <li>
-          <span class="check check-green">🍎</span>
-          <span class="text">Vásárlólista készítése</span>
-        </li>
-      </ul>
+        <p class="description">
+          Tervezd meg a heti menüt, mentsd el kedvenc receptjeidet, és fedezz fel új ízeket!
+        </p>
+        
+        <ul class="feature-list">
+          <li class="feature-item">
+            <span class="emoji-circle">🍋</span>
+            <span class="text">Receptek mentése</span>
+          </li>
+          <li class="feature-item">
+            <span class="emoji-circle">🫑</span>
+            <span class="text">Heti menü összeállítása</span>
+          </li>
+          <li class="feature-item">
+            <span class="emoji-circle">🍎</span>
+            <span class="text">Vásárlólista készítése</span>
+          </li>
+        </ul>
 
-      <!-- Logo -->
-      <img :src="logo" alt="Logo" class="logo-image" />
-    </section>
+        <div class="logo-wrapper">
+          <img :src="logo" alt="Logo" class="logo-image" />
+        </div>
+      </section>
 
-    <!-- Feltételes tartalom -->
-    <section v-if="userEmail" class="user-section">
-      <p>Be vagy jelentkezve mint <strong>{{ userEmail }}</strong>.</p>
-      <button @click="handleLogout">Kijelentkezés</button>
-    </section>
+      <section v-if="userEmail" class="user-section">
+        <div class="user-badge">
+          <p>Bejelentkezve: <strong>{{ userEmail }}</strong></p>
+        </div>
+        <button class="action-btn logout-btn" @click="handleLogout">Kijelentkezés</button>
+      </section>
 
-    <section v-else class="guest-section">
-      <p>
-        <router-link to="/login">Jelentkezz be</router-link>
-        vagy
-        <router-link to="/register">regisztrálj</router-link>,
-        hogy elkezdhesd az utazást az ízek világába!
-      </p>
-    </section>
+      <section v-else class="guest-section">
+        <div class="guest-card">
+          <p>
+            <router-link to="/login" class="auth-link">Jelentkezz be</router-link>
+            vagy
+            <router-link to="/register" class="auth-link">regisztrálj</router-link>,
+            hogy elkezdhesd az utazást az ízek világába!
+          </p>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -80,121 +84,150 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;500;600&display=swap');
 
-.home-container {
-  max-width: 800px;
-  margin: 60px auto;
-  padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.15);
+.home-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 85vh;
+  padding: 20px;
+}
+
+.glass-box-orange {
+  max-width: 700px;
+  width: 100%;
+  padding: 50px 40px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, rgba(255, 165, 0, 0.25), rgba(255, 165, 0, 0.05));
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.1);
   text-align: center;
-  backdrop-filter: blur(2px);
-  background: linear-gradient(135deg, rgba(255,200,120,0.2) 0%, rgba(255,220,150,0.2) 100%);
 }
 
-/* 🔥 Narancs–arany átmenetes cím + fade-in + pulzálás */
-.intro-section h1 {
+.glow-title {
   font-family: 'Playfair Display', serif;
-  font-size: 2.4rem;
-  background: linear-gradient(to right, #ff8c00, #ffbb33, #ffcc66);
+  font-size: 3rem;
+  background: linear-gradient(to right, #ff8c00, #ffd700);
   -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 15px;
-
-  opacity: 0;
-  animation: fadeIn 2s ease forwards, pulse 4s ease-in-out infinite;
-}
-
-/* Fade-in */
-@keyframes fadeIn {
-  0% { opacity: 0; transform: translateY(10px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-/* Finom pulzálás */
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
-}
-
-.intro-section p {
-  font-size: 18px;
+  background-clip: text;
+  color: transparent;
   margin-bottom: 20px;
-  color: #2c3e50;
+  animation: fadeIn 1.5s ease-out forwards;
+}
+
+.description {
+  font-family: 'Poppins', sans-serif;
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 35px;
+  line-height: 1.6;
 }
 
 .feature-list {
   list-style: none;
   padding: 0;
-  margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 40px;
+}
+
+.feature-item {
+  background: rgba(255, 255, 255, 0.4);
+  padding: 15px 20px;
+  border-radius: 20px;
+  display: flex;
   align-items: center;
   gap: 12px;
+  transition: transform 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.feature-list li {
+.feature-item:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.emoji-circle {
+  font-size: 1.5rem;
+  background: white;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
-  min-width: 240px;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-.check {
-  font-size: 20px;
-  margin-right: 12px;
-  display: flex;
-  align-items: center;
-  transition: all 0.3s ease;
-}
-
-/* Színek */
-.check-orange { color: #ff6a00 !important; }
-.check-green  { color: #28a745 !important; }
-.check-yellow { color: #f7dc6f !important; }
-
-/* Hover */
-.check:hover {
-  transform: scale(1.3) rotate(-10deg);
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
-}
-
-.text {
-  color: #2c3e50;
-  font-weight: 500;
-  font-size: 16px;
+.logo-wrapper {
+  margin-top: 20px;
 }
 
 .logo-image {
-  max-width: 300px;
-  height: auto;
-  margin: 25px auto 0;
-  display: block;
-  filter: drop-shadow(0 4px 10px rgba(255, 106, 0, 0.5));
-  border-radius: 12px;
-  background-color: #ffffffcc;
+  max-width: 220px;
+  filter: drop-shadow(0 8px 15px rgba(255, 140, 0, 0.3));
+  border-radius: 20px;
   padding: 10px;
+  transition: 0.5s;
 }
 
-.user-section,
-.guest-section {
-  margin-top: 30px;
+.logo-image:hover {
+  transform: rotate(3deg) scale(1.05);
 }
 
-button {
-  margin-top: 15px;
-  padding: 10px 25px;
-  background: linear-gradient(to right, #ff6a00, #ee0979);
+.user-badge {
+  background: rgba(255, 140, 0, 0.1);
+  padding: 10px 20px;
+  border-radius: 30px;
+  display: inline-block;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.action-btn {
+  background: linear-gradient(135deg, #FF8C00, #FF4500);
   color: white;
   border: none;
-  border-radius: 8px;
+  padding: 12px 35px;
+  border-radius: 15px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s ease;
+  transition: 0.3s;
+  box-shadow: 0 4px 15px rgba(255, 69, 0, 0.3);
 }
 
-button:hover {
-  background: linear-gradient(to right, #ee0979, #ff6a00);
+.action-btn:hover {
   transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(255, 69, 0, 0.4);
+}
+
+.guest-card {
+  margin-top: 20px;
+  font-size: 1.1rem;
+}
+
+.auth-link {
+  color: #FF8C00;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: 0.3s;
+}
+
+.auth-link:hover {
+  border-bottom: 2px solid #FF8C00;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.8s ease-out;
 }
 </style>

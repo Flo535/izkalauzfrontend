@@ -1,9 +1,14 @@
 <template>
   <div id="app">
     <Navbar />
+    
     <div class="app-main">
       <SidebarLayout>
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </SidebarLayout>
     </div>
   </div>
@@ -23,66 +28,104 @@ export default {
 </script>
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&display=swap');
+/* Betűtípusok: Poppins a szövegnek, Playfair Display a címeknek */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
-
+/* Alapbeállítások a teljes oldalra */
 html, body, #app {
   margin: 0;
   padding: 0;
-  min-height: 100%;
-  font-family: 'Playfair Display', serif;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  
+  /* A közös háttérkép beállítása */
   background-image: url('/src/assets/background-photo.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
-}
-
-.app-main {
-  flex: 1;
-  display: flex;
-  min-height: 100vh;
-  padding: 20px;
-  background: transparent; /* háttérkép látszik */
-}
-
-body.loading::after {
-  content: 'Betöltés...';
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 0.6);
+  
+  /* Simább görgetés */
+  scroll-behavior: smooth;
   color: #2c3e50;
-  font-size: 1.5rem;
+}
+
+/* Fő tartály az oldalsáv és a tartalom számára */
+.app-main {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  backdrop-filter: blur(3px);
+  flex-direction: column;
+  min-height: 100vh;
+  /* Egy leheletnyi sötétítés a háttérképen, hogy az üveghatás jobban érvényesüljön */
+  background: rgba(0, 0, 0, 0.15); 
 }
 
-/* Globális zöld scroll minden listára és overflow-os konténerekre */
+/* --- GLOBÁLIS NARANCSSÁRGA GÖRGETŐSÁV (SCROLLBAR) --- */
+
+/* Firefox */
 * {
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: #8fbc8f #f0f0f0; /* thumb szín, track szín Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #ff8c00 rgba(255, 255, 255, 0.1);
 }
 
+/* Chrome, Safari, Edge */
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 
 *::-webkit-scrollbar-track {
-  background: rgba(0,0,0,0.05);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #a3d9a5, #6fbf6f); /* halvány zöld → sötétebb zöld */
-  border-radius: 8px;
+  background: linear-gradient(180deg, #ffb84d, #ff8c00); 
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
 }
 
 *::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #92d292, #5faf5f);
+  background: linear-gradient(180deg, #ffcc66, #ffa500);
+}
+
+/* --- ANIMÁCIÓK --- */
+
+/* Oldalváltási effekt (Fade) */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+/* --- BETÖLTÉSI ÁLLAPOT --- */
+body.loading::after {
+  content: 'Ízek betöltése...';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  color: #ff8c00;
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(15px);
+}
+
+/* Közös címsor stílus az egész appban */
+h1, h2, h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
 }
 </style>

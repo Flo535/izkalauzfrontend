@@ -1,45 +1,45 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Oldalak importálása
+// Oldalak importálása a mappaszerkezeted alapján
 import Home from '../pages/Home.vue'
-import Recipes from '../pages/Recipe.vue'       // pontos fájlnév
+import Recipe from '../pages/Recipe.vue'
+import RecipeDetails from '../pages/RecipeDetails.vue'
+import Profile from '../pages/Profile.vue'
 import Favorites from '../pages/Favorites.vue'
-import Cart from '../pages/Cart.vue'
-import Menu from '../pages/Menu.vue'
 import Login from '../pages/Login.vue'
 import Register from '../pages/Register.vue'
-import Profile from '../pages/Profile.vue'
-import AdminUsers from '../pages/AdminUsers.vue'
-import RecipeDetails from '../pages/RecipeDetails.vue'
-import NewRecipe from '../pages/NewRecipe.vue'
 import EditRecipe from '../pages/EditRecipe.vue'
-<<<<<<< HEAD
+import NewRecipe from '../pages/NewRecipe.vue'
+import Menu from '../pages/Menu.vue' 
 import ShoppingList from '../pages/ShoppingList.vue'
-=======
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
+import Note from '../pages/Note.vue' // Az új jegyzet fájlunk
+
+// Admin oldalak
+import AdminPanel from '../pages/AdminPanel.vue'
+import AdminUsers from '../pages/AdminUsers.vue'
+import AdminRecipes from '../pages/AdminRecipes.vue'
 
 const routes = [
+  // Alapvető útvonalak
   { path: '/', component: Home },
-  { path: '/recipes', component: Recipes },
-  { path: '/receptek', component: Recipes },  // magyar URL
+  { path: '/receptek', component: Recipe },
+  { path: '/recept/:id', component: RecipeDetails },
+  { path: '/profile', component: Profile },
   { path: '/kedvencek', component: Favorites },
-<<<<<<< HEAD
-  { path: '/jegyzet', component: Cart, meta: { requiresAuth: true } },
-=======
-  { path: '/vasarlas', component: Cart, meta: { requiresAuth: true } },
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
-  { path: '/menu', component: Menu },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
-  { path: '/profile', component: Profile },
-  { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe },
-  { path: '/edit-recipe/:id', name: 'EditRecipe', component: EditRecipe },
-  { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
-<<<<<<< HEAD
-  { path: '/bevasarlolista', component: ShoppingList, meta: { requiresAuth: true } },
-=======
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
-  { path: '/recept/:id', component: RecipeDetails }
+  { path: '/szerkesztes/:id', component: EditRecipe },
+  { path: '/uj-recept', component: NewRecipe },
+  
+  // Funkcionális oldalak
+  { path: '/menu', component: Menu }, 
+  { path: '/vasarlas', component: ShoppingList },
+  { path: '/jegyzet', component: Note }, // Most már a Note.vue-t tölti be!
+
+  // Admin felület útvonalai
+  { path: '/admin', component: AdminPanel },
+  { path: '/admin/users', component: AdminUsers },
+  { path: '/admin/recipes', component: AdminRecipes }
 ]
 
 const router = createRouter({
@@ -47,23 +47,16 @@ const router = createRouter({
   routes
 })
 
-// Globális navigációs őr – admin ellenőrzés
+// Opcionális: Navigációs őr (ha szeretnéd, hogy ne lehessen bejelentkezés nélkül jegyzetelni)
 router.beforeEach((to, from, next) => {
-  const token = localStorage.getItem('token')
-  let role = null
-  if (token) {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      role = payload.role || payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"]
-    } catch {}
-  }
+  const publicPages = ['/', '/login', '/register', '/receptek'];
+  const authRequired = !publicPages.includes(to.path);
+  const loggedIn = localStorage.getItem('token');
 
-  if (to.meta.requiresAdmin && role?.toLowerCase() !== 'admin') {
-    alert('Ehhez a felülethez nincs jogosultságod!')
-    return next('/')
+  if (authRequired && !loggedIn) {
+    return next('/login');
   }
-
-  next()
-})
+  next();
+});
 
 export default router

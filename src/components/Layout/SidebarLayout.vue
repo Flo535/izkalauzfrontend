@@ -1,42 +1,35 @@
 <template>
   <div class="layout">
-    <!-- DESKTOP SIDEBAR -->
-    <aside class="sidebar desktop">
+    <aside class="sidebar desktop glass-orange">
+      <div class="sidebar-header">
+        <h2 class="logo-text">Íz-kalauz</h2>
+      </div>
       <nav>
         <ul>
           <li><router-link to="/">🏠 Kezdőlap</router-link></li>
-          <li><router-link to="/receptek">🍽 Receptek</router-link></li>
+          <li><router-link to="/receptek">🥘 Receptek</router-link></li>
           <li><router-link to="/kedvencek">❤️ Kedvencek</router-link></li>
-<<<<<<< HEAD
           <li><router-link to="/jegyzet">📝 Jegyzet</router-link></li>
-          <li><router-link to="/bevasarlolista"> Bevásárlólista</router-link></li>
-=======
           <li><router-link to="/vasarlas">🛒 Bevásárlólista</router-link></li>
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
           <li><router-link to="/menu">📅 Heti Menü</router-link></li>
           <li><router-link to="/profile">👤 Profil</router-link></li>
         </ul>
       </nav>
     </aside>
 
-    <!-- MOBILE HAMBURGER -->
-    <button class="mobile-menu-btn" @click="isOpen = !isOpen">☰</button>
+    <button class="mobile-menu-btn" @click="isOpen = !isOpen">
+      {{ isOpen ? '✕' : '☰' }}
+    </button>
 
-    <!-- MOBILE SIDEBAR PANEL -->
     <transition name="slide-up">
-      <aside v-if="isOpen" class="sidebar mobile">
-        <button class="close-btn" @click="isOpen = false">✕</button>
+      <aside v-if="isOpen" class="sidebar mobile glass-orange">
         <nav>
           <ul>
             <li><router-link @click="isOpen = false" to="/">🏠 Kezdőlap</router-link></li>
-            <li><router-link @click="isOpen = false" to="/receptek">🍽 Receptek</router-link></li>
+            <li><router-link @click="isOpen = false" to="/receptek">🥘 Receptek</router-link></li>
             <li><router-link @click="isOpen = false" to="/kedvencek">❤️ Kedvencek</router-link></li>
-<<<<<<< HEAD
             <li><router-link @click="isOpen = false" to="/jegyzet">📝 Jegyzet</router-link></li>
-            <li><router-link @click="isOpen = false" to="/bevasarlolista"> Bevásárlólista</router-link></li>
-=======
             <li><router-link @click="isOpen = false" to="/vasarlas">🛒 Bevásárlólista</router-link></li>
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
             <li><router-link @click="isOpen = false" to="/menu">📅 Heti Menü</router-link></li>
             <li><router-link @click="isOpen = false" to="/profile">👤 Profil</router-link></li>
           </ul>
@@ -44,9 +37,8 @@
       </aside>
     </transition>
 
-    <!-- MAIN CONTENT -->
     <main class="main-area">
-      <div class="main-content glass-box">
+      <div class="main-content-glass">
         <slot />
       </div>
     </main>
@@ -65,22 +57,49 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Playfair+Display:wght@700&display=swap');
+
 .layout {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - 70px);
-  margin-top: 70px;
-  font-family: 'Segoe UI', sans-serif;
+  min-height: calc(100vh - 80px);
+  margin-top: 15px;
+  font-family: 'Poppins', sans-serif;
 }
 
-/* SIDEBAR COMMON */
+/* --- NAVBAR-STÍLUSÚ ÁTLÁTSZÓ OLDALSÁV --- */
+.glass-orange {
+  /* Ugyanaz a finom átlátszóság, mint a Navbar-nál */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  
+  /* Finom narancsos keret és csillogás */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 .sidebar {
   padding: 20px;
-  background: rgba(247, 243, 238, 0.85);
-  backdrop-filter: blur(10px);
-  color: #3B3B3B;
-  border-radius: 12px;
+  color: white; /* Fehér szöveg a sötét háttérkép felett */
   z-index: 1000;
+  border-radius: 20px;
+}
+
+.sidebar-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.logo-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  /* Ragyogó fehér-arany átmenet, mint a köszönő szövegnél */
+  background: linear-gradient(90deg, #ffffff, #ffd17a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.5));
 }
 
 .sidebar ul {
@@ -90,129 +109,75 @@ export default {
 }
 
 .sidebar li {
-  margin: 12px 0;
+  margin: 10px 0;
 }
 
 .sidebar a {
-  position: relative;
-  display: block;
-  padding: 8px 12px 8px 16px; /* 🔹 Extra bal padding a pseudo-element miatt */
-  border-radius: 8px;
-  font-weight: 500;
-  color: #3B3B3B;
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
-  transition: background 0.4s ease, padding-left 0.3s ease;
+  transition: all 0.3s ease;
+  gap: 12px;
+  font-size: 0.9rem;
 }
 
-.sidebar a::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 4px;
-  height: 100%;
-  background: rgba(255, 165, 80, 0.7);
-  border-radius: 4px;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: 1;
+/* Hover és Aktív állapot - hogy passzoljon a Navbar gombjaihoz */
+.sidebar a:hover, .router-link-active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 140, 0, 0.2));
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transform: translateX(5px);
 }
 
-.sidebar a:hover::before {
-  opacity: 1;
-}
-
-.sidebar a:hover {
-  background: linear-gradient(to right, rgba(255, 247, 150, 0.5), rgba(255, 165, 80, 0.5));
-  padding-left: 20px; /* 🔹 Hoverkor kicsit nagyobb */
-  z-index: 0;
-}
-
-/* DESKTOP SIDEBAR */
+/* MÉRET ÉS POZÍCIÓ */
 .sidebar.desktop {
-  top: 110px;
   position: fixed;
-  width: 240px;
-  min-height: 100%;
-  box-shadow: 4px 0 12px rgba(0,0,0,0.06);
-  flex-shrink: 0;
+  left: 20px;
+  width: 190px;
+  height: calc(100vh - 120px);
 }
 
-/* MAIN CONTENT */
+/* --- FŐ TARTALOM TERÜLETE --- */
 .main-area {
   flex: 1;
-  padding: 20px;
-  margin-left: 290px;
+  padding: 0 50px 40px 50px; /* Megnöveltük a távolságot */
+  margin-left: 230px;
 }
 
-.glass-box {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(6px);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(255,255,255,0.25);
+.main-content-glass {
+  background: rgba(255, 255, 255, 0.6); /* Marad a világos tartalom, hogy olvasható legyen */
+  backdrop-filter: blur(10px);
+  border-radius: 25px;
+  min-height: 80vh;
+  padding: 35px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  max-width: 950px;
+  margin: 0 auto;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
 }
 
-/* MOBILE HAMBURGER BUTTON */
+/* MOBIL GOMB ÉS PANEL */
 .mobile-menu-btn {
   display: none;
   position: fixed;
-  bottom: 20px;
-  right: 20px;
+  bottom: 25px;
+  right: 25px;
   z-index: 1200;
-  background: rgba(247,243,238,0.95);
-  border: none;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
-  font-size: 1.6rem;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  width: 55px;
+  height: 55px;
+  color: white;
 }
 
-/* MOBILE SIDEBAR PANEL */
-.sidebar.mobile {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 250px;
-  border-radius: 16px 16px 0 0;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  float: right;
-  cursor: pointer;
-}
-
-/* SLIDE UP TRANSITION */
-.slide-up-enter-active, .slide-up-leave-active {
-  transition: transform 0.3s ease;
-}
-.slide-up-enter {
-  transform: translateY(100%);
-}
-.slide-up-leave-to {
-  transform: translateY(100%);
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .sidebar.desktop {
-    display: none;
-  }
-
-  .mobile-menu-btn {
-    display: block;
-  }
-
-  .main-area {
-    flex: 1;
-    padding: 20px;
-    margin-top: 70px;
-  }
+@media (max-width: 1024px) {
+  .sidebar.desktop { display: none; }
+  .mobile-menu-btn { display: block; }
+  .main-area { margin-left: 0; padding: 20px; }
 }
 </style>

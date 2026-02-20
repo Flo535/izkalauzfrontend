@@ -2,16 +2,14 @@
   <nav class="navbar">
     <div class="nav-right">
 
-      <!-- Ha nincs bejelentkezve -->
       <template v-if="!user">
         <router-link to="/login" class="nav-btn admin-style">Bejelentkezés</router-link>
         <router-link to="/register" class="nav-btn user-style">Regisztráció</router-link>
       </template>
 
-      <!-- Ha be van jelentkezve -->
       <template v-else>
         <span class="welcome">
-          Szép napot kívánok, {{ user.isAdmin ? 'Admin' : 'Felhasználó' }}!
+          Szép napot kívánok, <span class="user-name">{{ user.isAdmin ? 'Admin' : 'Felhasználó' }}</span>!
         </span>
 
         <router-link
@@ -69,16 +67,19 @@ export default {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap');
 
 .navbar {
   width: 100%;
   display: flex;
   justify-content: center;
-  backdrop-filter: blur(12px);
-  background: linear-gradient(90deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+  backdrop-filter: blur(15px);
+  /* Kicsit világosabb réteg a barna háttér felett */
+  background: linear-gradient(90deg, rgba(255,255,255,0.15), rgba(255,255,255,0.08));
   border-bottom: 1px solid rgba(255,255,255,0.2);
-  font-family: 'Playfair Display', serif;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .nav-right {
@@ -88,65 +89,67 @@ export default {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 20px;
+  gap: 25px;
   padding: 0 40px;
 }
 
 .welcome {
-  font-size: 0.9rem;
-  font-style: italic;
-  letter-spacing: 1px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  margin-right: 10px;
 
-  /* finom arany-narancs átmenet */
-  background: linear-gradient(90deg, #ffd17a, #ffb84d);
-  background-clip: text;           /* standard tulajdonság */
-  -webkit-background-clip: text;   /* webkit böngészők */
+  /* Ragyogó fehér-arany átmenet a sötét háttérhez */
+  background: linear-gradient(90deg, #ffffff, #fff3e0, #ffd17a);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
   -webkit-text-fill-color: transparent;
 
-  /* árnyék, hogy a szöveg jobban látszódjon a háttéren */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.25);
+  /* Árnyék, hogy elváljon a háttértől */
+  filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.6));
 }
 
+.user-name {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 209, 122, 0.4);
+}
 
-
-/* Alap gombstílus minden gombnak */
 .nav-btn {
+  font-family: 'Poppins', sans-serif;
   font-weight: 600;
-  font-size: 0.95rem;
-  padding: 8px 22px;
-  border-radius: 25px;
+  font-size: 0.9rem;
+  padding: 10px 24px;
+  border-radius: 50px;
   border: none;
   cursor: pointer;
-  color: white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-  transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.5s ease;
-  font-family: 'Playfair Display', serif;
+  color: white !important;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-block;
 }
 
-/* Hover effekt minden gombnak */
 .nav-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(0,0,0,0.22);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
 }
 
-/* Admin és Bejelentkezés stílus - arany-bronz csillogó */
 .admin-style {
-  background: linear-gradient(135deg, #f9d976, #f39c12);
-  color: #fff;
-  text-shadow: 0 0 2px rgba(255,255,255,0.3);
+  background: linear-gradient(135deg, #FFD700, #FF8C00);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Regisztráció és Kijelentkezés stílus - csillogó barna */
 .user-style {
-  background: linear-gradient(135deg, #a17c5a, #c49b6c); /* barna-arany */
-  color: #fff;
-  text-shadow: 0 0 1px rgba(255,255,255,0.2);
+  background: linear-gradient(135deg, #a17c5a, #825e3f);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Mobil nézet */
 @media (max-width: 768px) {
-  .nav-right { gap: 12px; }
-  .nav-btn { font-size: 0.85rem; padding: 6px 16px; }
-  .welcome { font-size: 0.85rem; }
+  .nav-right { gap: 10px; padding: 0 15px; }
+  .nav-btn { font-size: 0.8rem; padding: 8px 14px; }
+  .welcome { display: none; } /* Mobilon elrejtjük a szöveget, hogy elférjenek a gombok */
 }
 </style>

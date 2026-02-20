@@ -1,12 +1,7 @@
 <template>
   <div class="note-page">
-<<<<<<< HEAD
     <h1 class="page-title">📝 Jegyzet</h1>
-=======
-    <h1 class="page-title">📝 Bevásárlólista</h1>
->>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
 
-    <!-- Ha nincs token, mutassunk egy hibaüzenetet -->
     <div v-if="errorMessage" class="error-message">
       <p>{{ errorMessage }}</p>
     </div>
@@ -34,7 +29,6 @@
 
 <script>
 import axios from "axios"
-import { authState } from "@/auth.js"
 
 const API_BASE = 'https://localhost:5150/api'
 
@@ -69,7 +63,10 @@ export default {
 
         this.noteText = res.data.text || ""
       } catch (err) {
-        this.errorMessage = "A betöltés nem sikerült!"
+        // Ha még nincs jegyzete a usernek (404), nem dobunk nagy hibát, csak üresen hagyjuk
+        if (err.response?.status !== 404) {
+          this.errorMessage = "A betöltés nem sikerült!"
+        }
       }
     },
 
@@ -120,6 +117,9 @@ export default {
 
 .note-box {
   padding: 20px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 15px;
+  backdrop-filter: blur(5px);
 }
 
 .note-input {
@@ -131,6 +131,7 @@ export default {
   font-size: 1.1rem;
   resize: vertical;
   background: rgba(255,255,255,0.8);
+  box-sizing: border-box;
 }
 
 .bottom-row {
@@ -156,17 +157,19 @@ export default {
   transition: 0.3s;
 }
 
-.save-btn:hover {
+.save-btn:hover:not(:disabled) {
   background: #d35400;
 }
 
-.error {
-  color: #e74c3c;
-  margin-top: 10px;
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .success {
   color: #27ae60;
   margin-top: 10px;
+  text-align: center;
+  font-weight: bold;
 }
 </style>
