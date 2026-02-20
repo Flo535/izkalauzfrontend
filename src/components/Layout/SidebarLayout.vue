@@ -7,8 +7,12 @@
           <li><router-link to="/">🏠 Kezdőlap</router-link></li>
           <li><router-link to="/receptek">🍽 Receptek</router-link></li>
           <li><router-link to="/kedvencek">❤️ Kedvencek</router-link></li>
+<<<<<<< HEAD
           <li><router-link to="/jegyzet">📝 Jegyzet</router-link></li>
           <li><router-link to="/bevasarlolista"> Bevásárlólista</router-link></li>
+=======
+          <li><router-link to="/vasarlas">🛒 Bevásárlólista</router-link></li>
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
           <li><router-link to="/menu">📅 Heti Menü</router-link></li>
           <li><router-link to="/profile">👤 Profil</router-link></li>
         </ul>
@@ -27,8 +31,12 @@
             <li><router-link @click="isOpen = false" to="/">🏠 Kezdőlap</router-link></li>
             <li><router-link @click="isOpen = false" to="/receptek">🍽 Receptek</router-link></li>
             <li><router-link @click="isOpen = false" to="/kedvencek">❤️ Kedvencek</router-link></li>
+<<<<<<< HEAD
             <li><router-link @click="isOpen = false" to="/jegyzet">📝 Jegyzet</router-link></li>
             <li><router-link @click="isOpen = false" to="/bevasarlolista"> Bevásárlólista</router-link></li>
+=======
+            <li><router-link @click="isOpen = false" to="/vasarlas">🛒 Bevásárlólista</router-link></li>
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
             <li><router-link @click="isOpen = false" to="/menu">📅 Heti Menü</router-link></li>
             <li><router-link @click="isOpen = false" to="/profile">👤 Profil</router-link></li>
           </ul>

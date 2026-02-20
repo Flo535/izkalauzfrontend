@@ -1,6 +1,10 @@
 <template>
   <div class="note-page">
+<<<<<<< HEAD
     <h1 class="page-title">📝 Jegyzet</h1>
+=======
+    <h1 class="page-title">📝 Bevásárlólista</h1>
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
 
     <!-- Ha nincs token, mutassunk egy hibaüzenetet -->
     <div v-if="errorMessage" class="error-message">

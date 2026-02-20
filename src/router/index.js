@@ -13,14 +13,21 @@ import AdminUsers from '../pages/AdminUsers.vue'
 import RecipeDetails from '../pages/RecipeDetails.vue'
 import NewRecipe from '../pages/NewRecipe.vue'
 import EditRecipe from '../pages/EditRecipe.vue'
+<<<<<<< HEAD
 import ShoppingList from '../pages/ShoppingList.vue'
+=======
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
 
 const routes = [
   { path: '/', component: Home },
   { path: '/recipes', component: Recipes },
   { path: '/receptek', component: Recipes },  // magyar URL
   { path: '/kedvencek', component: Favorites },
+<<<<<<< HEAD
   { path: '/jegyzet', component: Cart, meta: { requiresAuth: true } },
+=======
+  { path: '/vasarlas', component: Cart, meta: { requiresAuth: true } },
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
   { path: '/menu', component: Menu },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
@@ -28,7 +35,10 @@ const routes = [
   { path: '/new-recipe', name: 'NewRecipe', component: NewRecipe },
   { path: '/edit-recipe/:id', name: 'EditRecipe', component: EditRecipe },
   { path: '/admin', component: AdminUsers, meta: { requiresAdmin: true } },
+<<<<<<< HEAD
   { path: '/bevasarlolista', component: ShoppingList, meta: { requiresAuth: true } },
+=======
+>>>>>>> a3818384fecbfd303c31215c356a826809cf8d40
   { path: '/recept/:id', component: RecipeDetails }
 ]
 
