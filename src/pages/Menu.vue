@@ -89,9 +89,10 @@ export default {
   computed: {
     isAdmin() { return authState.isAdmin },
     orderedDays() {
+      const menuArray = Array.isArray(this.weeklyMenu) ? this.weeklyMenu : [];
       return this.daysOfWeek.map(d => ({
         ...d,
-        menu: this.weeklyMenu.find(m => m.dayOfWeek === d.value) || null
+        menu: menuArray.find(m => m.dayOfWeek === d.value) || null
       }))
     },
     soups() { return this.allRecipes.filter(r => r.category === 'Leves') },
@@ -99,32 +100,37 @@ export default {
     desserts() { return this.allRecipes.filter(r => r.category === 'Desszert') }
   },
   async mounted() {
-    await this.loadWeeklyMenu()
-    await this.loadRecipes()
+    await Promise.all([this.loadRecipes(), this.loadWeeklyMenu()]);
   },
   methods: {
     async loadWeeklyMenu() {
       try {
         const res = await axios.get(`${API_BASE}/weeklymenu`)
-        this.weeklyMenu = res.data
-      } catch (e) { console.error(e) }
+        this.weeklyMenu = res.data || []
+      } catch (e) { 
+        this.weeklyMenu = [];
+      }
     },
     async loadRecipes() {
       try {
         const res = await axios.get(`${API_BASE}/recipes`, { params: { page: 1, pageSize: 1000 } })
         this.allRecipes = res.data.items || []
-      } catch (e) { console.error(e) }
+      } catch (e) { 
+        console.error("Recept hiba:", e);
+      }
     },
     menuRecipes(menu) {
       if (!menu) return []
-      return [menu.soup, menu.mainCourse, menu.dessert].filter(Boolean)
+      return [menu.soup, menu.mainCourse, menu.dessert].filter(r => r && r.title)
     },
     fullImagePath(path) {
       if (!path) return 'https://localhost:5150/Images/default.jpg'
-      const fileName = path.split('\\').pop().split('/').pop()
+      const fileName = path.split(/[\\/]/).pop();
       return `https://localhost:5150/Images/${fileName}`
     },
-    onImageError(e) { e.target.src = 'https://localhost:5150/Images/default.jpg' },
+    onImageError(e) { 
+      e.target.src = 'https://localhost:5150/Images/default.jpg' 
+    },
     async addMenuItem() {
       try {
         const token = localStorage.getItem('token')
@@ -134,64 +140,97 @@ export default {
           mainCourseId: this.newItem.mainCourseId,
           dessertId: this.newItem.dessertId
         }, { headers: { Authorization: `Bearer ${token}` } })
+        
         this.newItem = { day: null, soupId: null, mainCourseId: null, dessertId: null }
-        this.addSuccess = 'Menü sikeresen mentve!'
+        this.addSuccess = '✅ Menü sikeresen mentve!'
         await this.loadWeeklyMenu()
         setTimeout(() => this.addSuccess = '', 3000)
-      } catch (err) { this.addError = 'Hiba a mentés során.' }
+      } catch (err) { 
+        this.addError = '❌ Hiba a mentés során.' 
+      }
     },
     async deleteMenuItem(id) {
-      if (!confirm('Biztosan törlöd a napi menüt?')) return
-      const token = localStorage.getItem('token')
-      await axios.delete(`${API_BASE}/weeklymenu/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      await this.loadWeeklyMenu()
+      if (!confirm('Biztosan törlöd?')) return
+      try {
+        const token = localStorage.getItem('token')
+        await axios.delete(`${API_BASE}/weeklymenu/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+        await this.loadWeeklyMenu()
+      } catch (e) {
+        console.error(e);
+      }
     }
   }
 }
 </script>
 
 <style scoped>
-.weekly-menu-page { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+/* 1. MAIN AREA SZÉLESÍTÉSE ÉS EMELÉSE (9-es szint) */
+.weekly-menu-page { 
+  max-width: 95%;           /* Szélesebb lett */
+  margin: 40px auto; 
+  padding: 0 40px;          /* Több margó a széleken */
+  min-height: 85vh;         /* Megemelt tartalom */
+}
 
-/* 1. ERŐSÍTETT OLDALCÍM */
 .page-title {
-  text-align: center; font-weight: 800; font-size: 2.8rem;
+  text-align: center; font-weight: 800; font-size: 3rem;
   font-family: 'Playfair Display', serif;
   background: linear-gradient(to right, #d35400, #ff8c00);
   -webkit-background-clip: text; background-clip: text; color: transparent;
-  margin-bottom: 40px;
-  filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.15));
+  margin-bottom: 50px;
 }
 
 /* 2. NAPOK CÍMEI */
+.day-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .day-label {
   font-family: 'Playfair Display', serif;
   color: #a0522d;
   font-weight: 700;
   border-bottom: 3px solid #ffd17a;
   padding-bottom: 5px;
+  margin: 0;
 }
 
-/* 3. RECEPT KÁRTYÁK (Összhangban a receptek oldallal) */
+/* 3. JAVÍTOTT KÁRTYA ELRENDEZÉS - EGY SORBA KÉNYSZERÍTVE */
 .meals-grid { 
-  display: grid; 
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-  gap: 25px; 
+  display: flex;             /* Grid helyett Flexbox a jobb kontrollért */
+  flex-direction: row; 
+  gap: 20px; 
+  justify-content: flex-start;
+  flex-wrap: nowrap;         /* TILOS a törés */
+  overflow-x: auto;          /* Ha nem férne ki, görgethető legyen */
+  padding-bottom: 10px;
 }
 
 .recipe-card {
+  flex: 0 0 calc(33.333% - 14px); /* Pontosan a harmada mínusz a gap fele */
+  min-width: 280px;          /* De ne legyen túl keskeny */
   background: white; border-radius: 20px; overflow: hidden;
   box-shadow: 0 8px 20px rgba(0,0,0,0.08); 
   display: flex; flex-direction: column;
   transition: transform 0.3s;
-  height: 100%;
+}
+
+/* Mobilos finomítás */
+@media (max-width: 1100px) {
+  .meals-grid {
+    flex-wrap: wrap;         /* Itt már engedjük a törést */
+  }
+  .recipe-card {
+    flex: 1 1 300px;         /* Kitölti a helyet, ha törik */
+  }
 }
 
 .recipe-card:hover { transform: translateY(-8px); }
-
-.recipe-img-container { position: relative; height: 180px; }
+.recipe-img-container { position: relative; height: 200px; }
 .recipe-img-container img { width: 100%; height: 100%; object-fit: cover; }
 
 .category-badge {
@@ -201,30 +240,26 @@ export default {
 }
 
 .recipe-info { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-.recipe-info h4 { font-size: 1.15rem; color: #333; margin-bottom: 15px; font-weight: 700; }
+.recipe-info h4 { font-size: 1.2rem; color: #333; margin-bottom: 15px; font-weight: 700; }
 
 .view-btn {
   background: linear-gradient(135deg, #FFB300, #ffa000); color: white; border: none; padding: 12px;
   border-radius: 12px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: auto;
 }
 
-/* ÜVEGHATÁSÚ DOBOZOK */
 .glass-box {
-  background: rgba(255, 255, 255, 0.45);
-  backdrop-filter: blur(12px); border-radius: 24px; padding: 25px; margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px); border-radius: 24px; padding: 30px; margin-bottom: 40px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.3);
 }
 
-.admin-panel { margin-bottom: 35px; border: 1px solid rgba(255, 255, 255, 0.4); }
-.add-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
 .btn-add { 
   background: linear-gradient(135deg, #FF8C00, #FF4500); color: white; 
   font-weight: bold; border: none; padding: 12px; border-radius: 10px; cursor: pointer;
 }
-.delete-btn-top { background: #ff5252; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; }
+
+.delete-btn-top { background: #ff5252; color: white; border: none; width: 35px; height: 35px; border-radius: 10px; cursor: pointer; font-weight: bold; }
 .no-menu { text-align: center; padding: 30px; color: #777; font-style: italic; }
 .fade-in { animation: fadeIn 0.5s ease-in; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.success { color: #27ae60; font-weight: bold; margin-top: 10px; }
-.error { color: #c0392b; font-weight: bold; margin-top: 10px; }
 </style>

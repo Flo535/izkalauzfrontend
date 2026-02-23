@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-// Oldalak importálása a mappaszerkezeted alapján
+// Oldalak importálása
 import Home from '../pages/Home.vue'
 import Recipe from '../pages/Recipe.vue'
 import RecipeDetails from '../pages/RecipeDetails.vue'
@@ -12,7 +12,7 @@ import EditRecipe from '../pages/EditRecipe.vue'
 import NewRecipe from '../pages/NewRecipe.vue'
 import Menu from '../pages/Menu.vue' 
 import ShoppingList from '../pages/ShoppingList.vue'
-import Note from '../pages/Note.vue' // Az új jegyzet fájlunk
+import Note from '../pages/Note.vue'
 
 // Admin oldalak
 import AdminPanel from '../pages/AdminPanel.vue'
@@ -34,7 +34,7 @@ const routes = [
   // Funkcionális oldalak
   { path: '/menu', component: Menu }, 
   { path: '/vasarlas', component: ShoppingList },
-  { path: '/jegyzet', component: Note }, // Most már a Note.vue-t tölti be!
+  { path: '/jegyzet', component: Note },
 
   // Admin felület útvonalai
   { path: '/admin', component: AdminPanel },
@@ -47,15 +47,22 @@ const router = createRouter({
   routes
 })
 
-// Opcionális: Navigációs őr (ha szeretnéd, hogy ne lehessen bejelentkezés nélkül jegyzetelni)
+// Navigációs őr javított verziója
 router.beforeEach((to, from, next) => {
-  const publicPages = ['/', '/login', '/register', '/receptek'];
-  const authRequired = !publicPages.includes(to.path);
+  // Azok az oldalak, amiket bárki (bejelentkezés nélkül is) láthat
+  const publicPages = ['/', '/login', '/register', '/receptek', '/menu'];
+  
+  // Megnézzük, hogy a cél útvonal a listában van-e, 
+  // vagy egy konkrét recept adatlapja-e (ami szintén publikus)
+  const isPublicPage = publicPages.includes(to.path) || to.path.startsWith('/recept/');
+  
   const loggedIn = localStorage.getItem('token');
 
-  if (authRequired && !loggedIn) {
+  // Csak akkor irányítunk át a loginra, ha az oldal nem publikus ÉS nincs bejelentkezve
+  if (!isPublicPage && !loggedIn) {
     return next('/login');
   }
+  
   next();
 });
 

@@ -66,7 +66,13 @@ export default {
     if (token) {
       try {
         const decoded = jwtDecode(token)
-        this.userEmail = decoded.email
+        console.log('Dekódolt token:', decoded) // Itt látni fogod a konzolon a szerkezetét!
+
+        // Mivel a tokenedben az email kulcsa egy hosszú URL, így próbáljuk meg elérni:
+        this.userEmail = decoded.email || 
+                         decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] ||
+                         "Felhasználó";
+                         
       } catch (error) {
         console.error('Érvénytelen token:', error)
         localStorage.removeItem('token')
