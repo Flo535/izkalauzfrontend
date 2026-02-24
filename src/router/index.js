@@ -20,7 +20,6 @@ import AdminUsers from '../pages/AdminUsers.vue'
 import AdminRecipes from '../pages/AdminRecipes.vue'
 
 const routes = [
-  // Alapvető útvonalak
   { path: '/', component: Home },
   { path: '/receptek', component: Recipe },
   { path: '/recept/:id', component: RecipeDetails },
@@ -28,15 +27,16 @@ const routes = [
   { path: '/kedvencek', component: Favorites },
   { path: '/login', component: Login },
   { path: '/register', component: Register },
-  { path: '/szerkesztes/:id', component: EditRecipe },
-  { path: '/uj-recept', component: NewRecipe },
   
-  // Funkcionális oldalak
+  // JAVÍTÁS: Mindkét útvonal ugyanoda (EditRecipe) vezessen!
+  { path: '/szerkesztes/:id', component: EditRecipe },
+  { path: '/edit-recipe/:id', component: EditRecipe }, // Ez kell az Admin Panelnek
+  
+  { path: '/uj-recept', component: NewRecipe },
   { path: '/menu', component: Menu }, 
   { path: '/vasarlas', component: ShoppingList },
   { path: '/jegyzet', component: Note },
 
-  // Admin felület útvonalai
   { path: '/admin', component: AdminPanel },
   { path: '/admin/users', component: AdminUsers },
   { path: '/admin/recipes', component: AdminRecipes }
@@ -47,18 +47,14 @@ const router = createRouter({
   routes
 })
 
-// Navigációs őr javított verziója
 router.beforeEach((to, from, next) => {
-  // Azok az oldalak, amiket bárki (bejelentkezés nélkül is) láthat
   const publicPages = ['/', '/login', '/register', '/receptek', '/menu'];
   
-  // Megnézzük, hogy a cél útvonal a listában van-e, 
-  // vagy egy konkrét recept adatlapja-e (ami szintén publikus)
+  // Fontos: a startsWith segít a paraméteres útvonalaknál
   const isPublicPage = publicPages.includes(to.path) || to.path.startsWith('/recept/');
   
   const loggedIn = localStorage.getItem('token');
 
-  // Csak akkor irányítunk át a loginra, ha az oldal nem publikus ÉS nincs bejelentkezve
   if (!isPublicPage && !loggedIn) {
     return next('/login');
   }

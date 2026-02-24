@@ -1,38 +1,68 @@
 <template>
-  <div class="recipe-page">
-    <div v-if="loading" class="loading">⏳ Recept betöltése...</div>
-    <div v-else-if="error" class="error">❌ {{ error }}</div>
+  <div class="recipe-page fade-in">
+    <div v-if="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Recept betöltése...</p>
+    </div>
 
-    <div v-else class="recipe-details">
-      <div class="image-wrapper">
-        <img :src="fullImagePath(recipe.imagePath)" :alt="recipe.title" @error="onImageError" />
+    <div v-else-if="error" class="error-container">
+      <p>❌ {{ error }}</p>
+      <button @click="$router.push('/')" class="back-btn">Vissza a főoldalra</button>
+    </div>
+
+    <div v-else class="recipe-content">
+      
+      <div class="image-section">
+        <div class="image-wrapper">
+          <img 
+            :src="currentImageUrl" 
+            :alt="recipe.title" 
+            @error="handleImageError" 
+            class="main-recipe-img"
+          />
+        </div>
+
+        <div v-if="canUpload" class="upload-bar">
+          <div class="upload-controls">
+            <label class="file-label">
+              <input type="file" @change="handleFileChange" accept="image/*" />
+              <span>{{ selectedFile ? selectedFile.name : 'Válassz képet...' }}</span>
+            </label>
+            <button 
+              class="upload-action-btn" 
+              @click="uploadImage" 
+              :disabled="uploading || !selectedFile"
+            >
+              {{ uploading ? 'Feltöltés...' : '📤 Kép mentése' }}
+            </button>
+          </div>
+        </div>
       </div>
 
-      <div v-if="canUpload" class="upload-section">
-        <input type="file" @change="handleFileChange" class="upload-input"/>
-        <button class="upload-btn" @click="uploadImage">📤 Kép feltöltése</button>
+      <div class="details-wrapper">
+        <h1 class="recipe-title">{{ recipe.title }}</h1>
+        
+        <div class="recipe-meta">
+          <span class="meta-item">👤 {{ recipe.authorEmail }}</span>
+          <span class="meta-item">📅 {{ formattedDate(recipe.createdAt) }}</span>
+        </div>
+
+        <div class="recipe-grid">
+          <section class="ingredients-card">
+            <h2>🧂 Hozzávalók</h2>
+            <ul class="ingredients-list">
+              <li v-for="(item, index) in recipe.ingredients" :key="index">
+                {{ formatIngredient(item) }}
+              </li>
+            </ul>
+          </section>
+
+          <section class="method-card">
+            <h2>📖 Elkészítés</h2>
+            <p class="method-text">{{ recipe.howToText || 'Nincs leírás megadva.' }}</p>
+          </section>
+        </div>
       </div>
-
-      <h1 class="title">{{ recipe.title }}</h1>
-
-      <div class="meta">
-        <span>👤 {{ recipe.authorEmail }}</span>
-        <span>📅 {{ formattedDate(recipe.createdAt) }}</span>
-      </div>
-
-      <section class="section">
-        <h2>🧂 Hozzávalók</h2>
-        <ul>
-          <li v-for="(item, index) in recipe.ingredients" :key="index">
-            {{ formatIngredient(item) }}
-          </li>
-        </ul>
-      </section>
-
-      <section class="section">
-        <h2>📖 Elkészítés</h2>
-        <p class="description">{{ recipe.howToText }}</p>
-      </section>
     </div>
   </div>
 </template>
@@ -47,31 +77,50 @@ export default {
       recipe: null,
       loading: true,
       error: null,
+      uploading: false,
       selectedFile: null,
+      failedImage: false,
       currentUserEmail: null,
       isAdmin: false
     }
   },
   computed: {
+    // Kép útvonalának generálása a logjaid alapján javítva
+    currentImageUrl() {
+      // A currentImageUrl részben írd át az alap útvonalat:
+      const baseUrl = "https://localhost:5150/images/recipes/";
+      const defaultImg = baseUrl + "default.jpg";
+
+      if (this.failedImage || !this.recipe?.imagePath) {
+        return defaultImg;
+      }
+
+      // Csak a fájlnevet vesszük ki (levágjuk a felesleges mappaneveket)
+      const fileName = this.recipe.imagePath.split(/[\\/]/).pop();
+      return baseUrl + fileName;
+    },
+    // Jogosultság ellenőrzése
     canUpload() {
-      return this.isAdmin || this.recipe?.authorEmail === this.currentUserEmail
+      if (!this.recipe) return false;
+      return this.isAdmin || this.recipe.authorEmail === this.currentUserEmail;
     }
   },
   mounted() {
-    this.fetchRecipe()
-    this.checkUser()
+    this.checkUser();
+    this.fetchRecipe();
   },
   methods: {
     async fetchRecipe() {
       try {
-        const id = this.$route.params.id
-        const response = await fetch(`https://localhost:5150/api/Recipes/${id}`)
-        if (!response.ok) throw new Error('Recept nem található')
-        this.recipe = await response.json()
+        const id = this.$route.params.id;
+        const response = await fetch(`https://localhost:5150/api/Recipes/${id}`);
+        if (!response.ok) throw new Error('A recept nem található.');
+        this.recipe = await response.json();
+        this.failedImage = false;
       } catch (err) {
-        this.error = err.message
+        this.error = err.message;
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     checkUser() {
@@ -80,126 +129,176 @@ export default {
       try {
         const decodeFn = jwtDecodeModule.default || jwtDecodeModule.jwtDecode || jwtDecodeModule;
         const payload = decodeFn(token);
+        
+        // Email és Role kinyerése (Microsoft sémák kezelésével)
         this.currentUserEmail = payload.email || payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress'];
-        const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-        this.isAdmin = roleClaim === 'Admin';
-      } catch (err) {
-        console.error("Token hiba:", err);
+        const role = payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+        this.isAdmin = role === 'Admin';
+      } catch (e) {
+        console.error("Token hiba", e);
       }
     },
-    fullImagePath(path) {
-      if (!path) return "https://localhost:5150/Images/default.jpg";
-      if (path.startsWith('http')) return path;
-      const fileName = path.split(/[\\/]/).pop();
-      return `https://localhost:5150/Images/${fileName}`;
-    },
-    onImageError(e) {
-      e.target.src = "https://localhost:5150/Images/default.jpg";
-    },
-    formatIngredient(item) {
-      if (typeof item === 'string') return item;
-      if (!item) return 'Ismeretlen';
-      return `${item.name || ''} ${item.quantity || ''} ${item.unit || ''}`.trim();
-    },
-    formattedDate(dateString) {
-      if (!dateString) return '';
-      return new Date(dateString).toLocaleDateString('hu-HU');
+    handleImageError(e) {
+      e.target.onerror = null;
+      this.failedImage = true;
     },
     handleFileChange(e) {
-      this.selectedFile = e.target.files[0]
+      this.selectedFile = e.target.files[0];
     },
     async uploadImage() {
-      if (!this.selectedFile) return alert('Válassz ki egy fájlt!');
+      if (!this.selectedFile) return;
+      
+      this.uploading = true;
       const formData = new FormData();
       formData.append('file', this.selectedFile);
-      const token = localStorage.getItem('token');
+
       try {
         const response = await fetch(`https://localhost:5150/api/Recipes/${this.recipe.id}/image`, {
           method: 'POST',
           body: formData,
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         });
-        if (!response.ok) throw new Error();
-        alert('Kép sikeresen feltöltve!');
-        this.fetchRecipe();
-      } catch {
-        alert('Hiba a feltöltés során.');
+
+        if (!response.ok) throw new Error('Hiba a feltöltés során.');
+
+        alert('Kép sikeresen frissítve!');
+        this.selectedFile = null;
+        this.failedImage = false;
+        await this.fetchRecipe(); // Frissítés az új képpel
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        this.uploading = false;
       }
+    },
+    formatIngredient(item) {
+      if (typeof item === 'string') return item;
+      return `${item.name} - ${item.quantity} ${item.unit}`.trim();
+    },
+    formattedDate(dateStr) {
+      if (!dateStr) return '';
+      return new Date(dateStr).toLocaleDateString('hu-HU');
     }
   }
 }
 </script>
 
 <style scoped>
-.recipe-page { padding: 20px; max-width: 900px; margin: 80px auto; }
-.recipe-details { animation: fadeIn 0.5s ease forwards; }
-
-.image-wrapper {
-  width: 100%;
-  height: 350px;
-  overflow: hidden;
-  border-radius: 16px;
-  margin-bottom: 20px;
-  background: #eee;
+.recipe-page {
+  max-width: 1000px;
+  margin: 100px auto 40px;
+  padding: 0 20px;
 }
 
-.image-wrapper img {
+/* Kép tároló - FIX MAGASSÁG */
+.image-wrapper {
+  width: 100%;
+  height: 450px;
+  background: #f0f0f0;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.main-recipe-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.upload-section {
-  margin-bottom: 20px;
-  display: flex;
-  gap: 10px;
+/* Feltöltő sáv */
+.upload-bar {
+  margin-top: -30px;
+  background: white;
+  padding: 15px 25px;
+  border-radius: 15px;
+  display: inline-block;
+  margin-left: 20px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
 }
 
-.upload-btn, .upload-input {
-  background: linear-gradient(to right, #ff8c00, #ffd700);
-  border: none;
+.upload-controls { display: flex; gap: 15px; align-items: center; }
+
+.file-label {
+  background: #f8f9fa;
   padding: 8px 15px;
+  border: 1px dashed #ccc;
   border-radius: 8px;
   cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.file-label input { display: none; }
+
+.upload-action-btn {
+  background: #ff8c00;
   color: white;
-  font-weight: 500;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.title {
-  font-size: 2.5rem;
+.upload-action-btn:disabled { background: #ccc; }
+
+/* Tartalom stílus */
+.details-wrapper { margin-top: 40px; }
+
+.recipe-title {
+  font-size: 3rem;
+  color: #2c3e50;
   margin-bottom: 10px;
-  background: linear-gradient(to right, #ff8c00, #ffbb33);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
-.meta {
+.recipe-meta {
+  color: #7f8c8d;
+  margin-bottom: 40px;
   display: flex;
   gap: 20px;
-  font-size: 0.9rem;
-  color: #555;
-  margin-bottom: 20px;
 }
 
-.section {
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid rgba(0,0,0,0.1);
+.recipe-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 30px;
 }
 
-.section h2 { margin-bottom: 10px; color: #ff8c00; }
-.description { white-space: pre-wrap; line-height: 1.7; }
+.ingredients-card, .method-card {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  border: 1px solid #eee;
+}
 
-.loading, .error { text-align: center; font-size: 1.2rem; padding: 40px; }
+h2 { color: #ff8c00; margin-bottom: 20px; }
 
+.ingredients-list { list-style: none; padding: 0; }
+.ingredients-list li {
+  padding: 10px 0;
+  border-bottom: 1px solid #f9f9f9;
+}
+
+.method-text {
+  line-height: 1.8;
+  white-space: pre-wrap;
+  color: #34495e;
+}
+
+/* Animáció */
+.fade-in { animation: fadeIn 0.6s ease-out; }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
-  .recipe-page { margin-top: 40px; }
-  .image-wrapper { height: 200px; }
+  .recipe-grid { grid-template-columns: 1fr; }
+  .image-wrapper { height: 300px; }
+  .recipe-title { font-size: 2rem; }
 }
 </style>

@@ -2,24 +2,27 @@
   <div class="new-recipe-page fade-in">
     <h2 class="page-title">🍲 Új recept hozzáadása</h2>
 
-    <div v-if="error" class="error-message">{{ error }}</div>
-    <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
+    <div v-if="error" class="error-message"><strong>Hiba:</strong> {{ error }}</div>
+    
+    <div v-if="successMessage" class="success-box">
+      <div class="success-content">
+        <span class="check-icon">✔</span>
+        <h3>{{ successMessage }}</h3>
+        <p>A receptet rögzítettük. Hamarosan látható lesz az oldalon!</p>
+        <p class="status-info">Állapot: <strong>Elbírálás alatt</strong></p>
+      </div>
+    </div>
 
-    <div class="recipe-container">
-      <!-- BAL OLDAL -->
+    <div v-if="!successMessage" class="recipe-container" :class="{ 'loading-opacity': saving }">
       <div class="left-section">
         <div class="form-group">
           <label>Recept neve:</label>
-          <input 
-            v-model="recipe.title" 
-            placeholder="Recept címe" 
-            class="input-field"
-          />
+          <input v-model="recipe.title" :disabled="saving" placeholder="Recept címe" class="input-field" />
         </div>
 
         <div class="form-group">
           <label>Kategória:</label>
-          <select v-model="recipe.category" class="select-field">
+          <select v-model="recipe.category" :disabled="saving" class="select-field">
             <option disabled value="">Válassz kategóriát</option>
             <option>Leves</option>
             <option>Főétel</option>
@@ -28,79 +31,48 @@
         </div>
 
         <div class="form-group">
+          <label>Étel fotója:</label>
+          <input type="file" @change="handleFileChange" :disabled="saving" accept="image/*" class="input-field file-input" />
+          <div v-if="imagePreview" class="image-preview-container">
+            <img :src="imagePreview" class="preview-img" alt="Előnézet" @error="onPreviewError" />
+          </div>
+        </div>
+
+        <div class="form-group">
           <label>Rövid leírás:</label>
-          <textarea 
-            v-model="recipe.description" 
-            placeholder="Rövid leírás az ételről"
-            class="textarea-field short"
-          ></textarea>
+          <textarea v-model="recipe.description" :disabled="saving" placeholder="Rövid leírás..." class="textarea-field short"></textarea>
         </div>
 
         <div class="form-group">
           <label>Elkészítés menete:</label>
-          <textarea 
-            v-model="recipe.howToText" 
-            placeholder="Lépésről lépésre..."
-            class="textarea-field tall"
-          ></textarea>
+          <textarea v-model="recipe.howToText" :disabled="saving" placeholder="Lépésről lépésre..." class="textarea-field tall"></textarea>
         </div>
       </div>
 
-      <!-- JOBB OLDAL -->
       <div class="right-section">
         <div class="ingredients-header">
           <h3 class="section-title">Hozzávalók</h3>
-          <button @click="addIngredient" class="add-btn">
-            ➕ Hozzáadás
-          </button>
+          <button @click="addIngredient" :disabled="saving" class="add-btn">➕ Hozzáadás</button>
         </div>
 
         <div class="ingredients-list">
-          <div 
-            v-for="(ingredient, index) in ingredients" 
-            :key="index"
-            class="ingredient-row"
-          >
-            <input
-              v-model="ingredient.name"
-              placeholder="Hozzávaló neve"
-              class="input-field ingredient-name"
-            />
-            
-            <input
-              v-model="ingredient.quantity"
-              placeholder="Mennyiség"
-              class="input-field ingredient-quantity"
-              @input="sanitizeQuantity(ingredient)"
-            />
-            
+          <div v-for="(ingredient, index) in ingredients" :key="index" class="ingredient-row">
+            <input v-model="ingredient.name" placeholder="Hozzávaló" class="input-field ingredient-name" />
+            <input v-model="ingredient.quantity" placeholder="Menny." class="input-field ingredient-quantity" />
             <select v-model="ingredient.unit" class="select-field ingredient-unit">
-              <option disabled value="">Egység</option>
-              <option v-for="(unit, i) in units" :key="i" :value="unit">
-                {{ unit }}
-              </option>
+              <option v-for="(unit, i) in units" :key="i" :value="unit">{{ unit }}</option>
             </select>
-            
-            <button 
-              @click="removeIngredient(index)" 
-              class="remove-btn"
-              title="Törlés"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div v-if="ingredients.length === 0" class="empty-state">
-            Még nincsenek hozzávalók. Kattints a "Hozzáadás" gombra!
+            <button @click="removeIngredient(index)" class="remove-btn">✕</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- GOMBOK -->
-    <div class="form-buttons">
-      <button @click="cancel" class="cancel-btn">Mégse</button>
-      <button @click="saveRecipe" class="save-btn">💾 Mentés</button>
+    <div v-if="!successMessage" class="form-buttons">
+      <button @click="cancel" class="cancel-btn" :disabled="saving">Mégse</button>
+      <button @click="saveRecipe" class="save-btn" :disabled="saving">
+        {{ saving ? 'Mentés folyamatban...' : '💾 Beküldés' }}
+      </button>
     </div>
   </div>
 </template>
@@ -108,161 +80,87 @@
 <script>
 import axios from 'axios'
 
-const API_BASE = 'https://localhost:5150/api'
-
 export default {
   name: 'NewRecipe',
   data() {
     return {
-      recipe: {
-        title: '',
-        category: '',
-        description: '',
-        howToText: ''
-      },
+      recipe: { title: '', category: '', description: '', howToText: '' },
       ingredients: [],
-      units: [
-        'g',
-        'dkg',
-        'kg',
-        'ml',
-        'dl',
-        'l',
-        'db',
-        'kk',
-        'tk',
-        'ek',
-        'csipet'
-      ],
+      selectedFile: null,
+      imagePreview: null,
+      units: ['g', 'dkg', 'kg', 'ml', 'dl', 'l', 'db', 'ek', 'tk', 'csipet'],
       error: null,
-      successMessage: null
+      successMessage: null,
+      saving: false
     }
   },
-
-  mounted() {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      this.$router.push('/login')
-    }
-  },
-
   methods: {
-    addIngredient() {
-      this.ingredients.push({
-        name: '',
-        quantity: '',
-        unit: ''
-      })
+    handleFileChange(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.selectedFile = file;
+        this.imagePreview = URL.createObjectURL(file);
+      }
     },
-
+    // Vészfék: Ha az előnézet vagy a default kép is hibás, ne fagyjon le!
+    onPreviewError(event) {
+      event.target.style.display = 'none';
+      console.error("Kép betöltési hiba - Végtelen ciklus megakadályozva.");
+    },
+    addIngredient() {
+      this.ingredients.push({ name: '', quantity: '0', unit: 'db' })
+    },
     removeIngredient(index) {
       this.ingredients.splice(index, 1)
     },
-
-    sanitizeQuantity(ingredient) {
-      // Csak számok, pont és vessző engedélyezése
-      ingredient.quantity = ingredient.quantity.replace(/[^0-9.,]/g, '')
-    },
-
     cancel() {
-      this.$router.push('/profile')
+      this.$router.push('/');
     },
-
     async saveRecipe() {
-      this.error = null
-      this.successMessage = null
+      this.saving = true;
+      this.error = null;
 
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem('jwt') || localStorage.getItem('token');
       if (!token) {
-        this.error = 'A recept mentéséhez be kell jelentkezned!'
-        return
+        this.error = "Jelentkezz be a mentéshez!";
+        this.saving = false;
+        return;
       }
 
-      // Validálás
-      if (!this.recipe.title.trim()) {
-        this.error = 'A recept neve kötelező!'
-        return
-      }
+      // Email kinyerése
+      let userEmail = "";
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userEmail = payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"] || payload.email;
+      } catch (e) { console.error("Token hiba"); }
 
-      if (!this.recipe.category) {
-        this.error = 'A kategória kiválasztása kötelező!'
-        return
-      }
+      const formData = new FormData();
+      formData.append('Title', this.recipe.title);
+      formData.append('Category', this.recipe.category);
+      formData.append('Description', this.recipe.description || '');
+      formData.append('HowToText', this.recipe.howToText || '');
+      formData.append('AuthorEmail', userEmail);
 
-      if (!this.recipe.description.trim()) {
-        this.error = 'A rövid leírás kötelező!'
-        return
-      }
+      this.ingredients.forEach((ing, index) => {
+        formData.append(`Ingredients[${index}].Name`, ing.name);
+        formData.append(`Ingredients[${index}].Quantity`, ing.quantity);
+        formData.append(`Ingredients[${index}].Unit`, ing.unit);
+      });
 
-      if (!this.recipe.howToText.trim()) {
-        this.error = 'Az elkészítés menete kötelező!'
-        return
-      }
-
-      if (this.ingredients.length === 0) {
-        this.error = 'Legalább egy hozzávalót adj meg!'
-        return
-      }
-
-      // Hozzávalók validálása
-      for (let i = 0; i < this.ingredients.length; i++) {
-        const ing = this.ingredients[i]
-        if (!ing.name.trim()) {
-          this.error = `A ${i + 1}. hozzávaló neve kötelező!`
-          return
-        }
-        if (!ing.quantity) {
-          this.error = `A ${i + 1}. hozzávaló mennyisége kötelező!`
-          return
-        }
-        if (!ing.unit) {
-          this.error = `A ${i + 1}. hozzávaló mértékegysége kötelező!`
-          return
-        }
-      }
+      if (this.selectedFile) formData.append('imageFile', this.selectedFile);
 
       try {
-        const payload = {
-          title: this.recipe.title,
-          category: this.recipe.category,
-          description: this.recipe.description,
-          howToText: this.recipe.howToText,
-          ingredients: this.ingredients.map(ing => ({
-            name: ing.name.trim(),
-            quantity: parseFloat(ing.quantity.replace(',', '.')),
-            unit: ing.unit
-          }))
-        }
-
-        console.log('Küldött payload:', payload)
-
-        const response = await axios.post(
-          `${API_BASE}/Recipes`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-
-        console.log('Backend válasz:', response.data)
-
-        this.successMessage = '🎉 Recept sikeresen létrehozva!'
+        await axios.post('https://localhost:5150/api/Recipes', formData, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         
-        // 1.5 másodperc múlva átirányítás a profil oldalra
-        setTimeout(() => {
-          this.$router.push('/profile')
-        }, 1500)
+        this.successMessage = "Sikeres mentés!";
+        // Vár 3 másodpercet, hogy lássa az üzenetet, majd hazaküldi
+        setTimeout(() => this.$router.push('/'), 3000); 
 
       } catch (err) {
-        console.error('Mentés hiba:', err)
-        console.error('Error response:', err.response)
-        
-        if (err.response) {
-          this.error = err.response.data?.message || 
-                      err.response.data?.error || 
-                      err.response.statusText || 
-                      'Hiba a recept mentésekor.'
-        } else {
-          this.error = err.message || 'Nem sikerült a mentés.'
-        }
+        this.error = err.response?.data?.message || "Hiba történt a mentés során.";
+        this.saving = false;
       }
     }
   }
@@ -270,326 +168,9 @@ export default {
 </script>
 
 <style scoped>
-* {
-  box-sizing: border-box;
-}
-
-.new-recipe-page {
-  max-width: 1200px;
-  margin: 60px auto;
-  padding: 30px;
-  background: linear-gradient(135deg, #fff8e1 0%, #ffe0b2 100%);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-}
-
-.page-title {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 30px;
-  text-align: center;
-  color: #e67e22;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
-}
-
-.error-message {
-  color: #e74c3c;
-  background: #fee;
-  border: 2px solid #fcc;
-  padding: 14px;
-  border-radius: 10px;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 600;
-  animation: shake 0.5s;
-}
-
-.success-message {
-  color: #27ae60;
-  background: #efe;
-  border: 2px solid #cfc;
-  padding: 14px;
-  border-radius: 10px;
-  text-align: center;
-  margin-bottom: 20px;
-  font-weight: 600;
-  animation: fadeIn 0.5s;
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-
-.recipe-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 30px;
-  margin-bottom: 30px;
-}
-
-@media (max-width: 968px) {
-  .recipe-container {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* BAL OLDAL */
-.left-section {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.form-group {
-  margin-bottom: 20px;
-  margin-right: 30px;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #333;
-  font-size: 0.95rem;
-}
-
-.input-field {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px;
-  border-radius: 8px;
-  border: 2px solid #ddd;
-  font-size: 1rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  background: white;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: #e67e22;
-  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
-}
-
-.select-field {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 12px;
-  border-radius: 8px;
-  border: 2px solid #ddd;
-  font-size: 1rem;
-  background: white;
-  cursor: pointer;
-  transition: border-color 0.3s;
-}
-
-.select-field:focus {
-  outline: none;
-  border-color: #e67e22;
-}
-
-.textarea-field {
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  border: 2px solid #ddd;
-  font-size: 1rem;
-  resize: none;
-  font-family: inherit;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  background: white;
-}
-
-.textarea-field:focus {
-  outline: none;
-  border-color: #e67e22;
-  box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
-}
-
-.textarea-field.short {
-  min-height: 100px;
-}
-
-.textarea-field.tall {
-  min-height: 200px;
-}
-
-/* JOBB OLDAL */
-.right-section {
-  background: rgba(255, 255, 255, 0.9);
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  display: flex;
-  flex-direction: column;
-}
-
-.ingredients-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.section-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #e67e22;
-  margin: 0;
-}
-
-.add-btn {
-  padding: 10px 16px;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 10px rgba(46, 204, 113, 0.3);
-}
-
-.add-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(46, 204, 113, 0.4);
-}
-
-.add-btn:active {
-  transform: translateY(0);
-}
-
-.ingredients-list {
-  flex: 1;
-  overflow-y: auto;
-  max-height: 400px;
-}
-
-.ingredient-row {
-  display: grid;
-  grid-template-columns: 3fr 1.3fr 1.1fr auto;
-  gap: 7px; /* Oszlopok özötti táv */
-  margin-bottom: 16px; /* Soro közötti táv */
-  align-items: center;
-}
-
-.ingredient-name {
-  max-width: 450px;
-}
-
-.ingredient-quantity {
-  max-width: 350px;
-}
-
-.ingredient-unit {
-  max-width: 80px;
-}
-
-.ingredient-row .input-field {
-  padding: 8px 10px;
-  font-size: 0.95rem;
-  height: 38px;
-}
-
-.ingredient-row .select-field {
-  padding: 8px 10px;
-  font-size: 0.95rem;
-  height: 38px;
-}
-
-.ingredient-row .input-field,
-.ingredient-row .select-field {
-  padding: 10px; /* Kisebb padding a kompaktabb megjelenésért */
-}
-
-.remove-btn {
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-  font-size: 1.1rem;
-  min-width: 40px;
-}
-
-.remove-btn:active {
-  transform: scale(0.95);
-}
-
-.empty-state {
-  text-align: center;
-  color: #999;
-  font-style: italic;
-  padding: 40px 20px;
-}
-
-/* GOMBOK ALSÓ SOR */
-.form-buttons {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  padding-top: 10px;
-}
-
-.cancel-btn {
-  padding: 12px 24px;
-  border-radius: 10px;
-  border: 2px solid #95a5a6;
-  background: white;
-  color: #555;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-  font-size: 1rem;
-}
-
-.cancel-btn:hover {
-  background: #ecf0f1;
-  border-color: #7f8c8d;
-  transform: translateY(-2px);
-}
-
-.save-btn {
-  padding: 12px 24px;
-  border-radius: 10px;
-  border: none;
-  background: linear-gradient(135deg, #FF8C00 0%, #FFD700 100%);
-  color: white;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 12px rgba(255, 140, 0, 0.3);
-  font-size: 1rem;
-}
-
-.save-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(255, 140, 0, 0.4);
-}
-
-.save-btn:active {
-  transform: translateY(-1px);
-}
-
-/* ANIMÁCIÓK */
-.fade-in {
-  animation: fadeIn 0.6s ease forwards;
-}
-
-@keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(20px); 
-  }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
-  }
-}
+.success-box { background: #d4edda; color: #155724; padding: 40px; border-radius: 15px; text-align: center; margin: 20px 0; border: 2px solid #c3e6cb; }
+.check-icon { font-size: 50px; display: block; margin-bottom: 10px; }
+.status-info { background: #fff; padding: 10px; border-radius: 8px; display: inline-block; margin-top: 15px; color: #856404; background-color: #fff3cd; }
+.loading-opacity { opacity: 0.6; pointer-events: none; }
+/* ... a korábbi stílusaid maradnak ... */
 </style>

@@ -6,7 +6,7 @@
       <input v-model="searchTerm" placeholder="Keresés a receptek között" class="search-input" />
     </div>
 
-    <div v-if="error" class="error">{{ error }}</div>
+    <div v-if="error" class="error-message">{{ error }}</div>
     
     <div v-if="filteredRecipes.length === 0 && !error" class="no-recipes">
       Nincs megjeleníthető recept.
@@ -17,22 +17,27 @@
         <div class="recipe-image-wrapper">
           <img 
             v-if="recipe.imagePath" 
-            :src="fullImagePath(recipe.imagePath)" 
+            :src="fullImagePath(recipe)" 
             alt="Recept képe"
-            @error="onImgError"
+            @error="onImgError(recipe.id, $event)"
+            class="recipe-img"
           />
           <div v-else class="recipe-no-image">Nincs kép</div>
         </div>
 
-        <h4 class="recipe-title">{{ recipe.title }}</h4>
+        <div class="recipe-content">
+          <h4 class="recipe-title">{{ recipe.title }}</h4>
 
-        <div class="ingredients-scroll">
-          <p class="ingredients"><strong>Hozzávalók:</strong> {{ formatIngredients(recipe.ingredients) }}</p>
-        </div>
+          <div class="ingredients-scroll">
+            <p class="ingredients">
+              <strong>Hozzávalók:</strong> {{ formatIngredients(recipe.ingredients) }}
+            </p>
+          </div>
 
-        <div class="author-info">
-          <span class="author-icon">👤</span>
-          <span class="author-email">{{ recipe.authorEmail }}</span>
+          <div class="author-info">
+            <span class="author-icon">👤</span>
+            <span class="author-email">{{ recipe.authorEmail }}</span>
+          </div>
         </div>
 
         <div class="card-buttons">
@@ -42,9 +47,9 @@
     </div>
 
     <div class="pagination" v-if="totalCount > pageSize">
-      <button @click="page--" :disabled="page === 1">⬅ Előző</button>
+      <button @click="prevPage" :disabled="page === 1">⬅ Előző</button>
       <span>{{ page }} / {{ Math.ceil(totalCount / pageSize) }}</span>
-      <button @click="page++" :disabled="page * pageSize >= totalCount">Következő ➡</button>
+      <button @click="nextPage" :disabled="page * pageSize >= totalCount">Következő ➡</button>
     </div>
   </div>
 </template>
@@ -64,13 +69,17 @@ export default {
       pageSize: 8,
       totalCount: 0,
       currentUserEmail: '',
-      currentUserRole: ''
+      currentUserRole: '',
+      // Itt tároljuk a hibás képek ID-it, hogy ne próbálkozzon újra
+      failedImages: new Set()
     }
   },
   computed: {
     filteredRecipes() {
       if (!this.searchTerm) return this.recipes;
-      return this.recipes.filter(r => r.title.toLowerCase().includes(this.searchTerm.toLowerCase()));
+      return this.recipes.filter(r => 
+        r.title && r.title.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
     }
   },
   async mounted() {
@@ -84,36 +93,75 @@ export default {
   },
   methods: {
     setUserFromToken() {
-      const token = localStorage.getItem('jwt');
+      const token = localStorage.getItem('jwt') || localStorage.getItem('token');
       if (token) {
         try {
           const decoded = jwtDecode(token);
           this.currentUserEmail = decoded.email || decoded.sub;
           this.currentUserRole = decoded.role || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
-        } catch (e) { console.error("Token hiba", e); }
+        } catch (e) { 
+          console.error("Token hiba", e); 
+        }
       }
     },
     async fetchRecipes() {
       try {
         const res = await axios.get(`https://localhost:5150/api/Recipes?page=${this.page}&pageSize=${this.pageSize}`);
-        this.recipes = res.data.items || res.data;
-        this.totalCount = res.data.totalCount || res.data.length;
-      } catch (err) { this.error = "Hiba a receptek lekérésekor."; }
+        this.recipes = res.data.items || [];
+        this.totalCount = res.data.totalCount || 0;
+      } catch (err) { 
+        this.error = "Hiba a receptek lekérésekor."; 
+        console.error(err);
+      }
     },
-    fullImagePath(path) {
-      if (!path) return null;
-      const fileName = path.replace(/\\/g, '/').split('/').pop();
-      return `https://localhost:5150/Images/${fileName}`;
+    fullImagePath(recipe) {
+      const baseUrl = "https://localhost:5150/";
+      const defaultImg = baseUrl + "images/recipes/default.jpg";
+
+      // Ha már elbukott a kép, vagy nincs elérési út, azonnal defaultot adunk
+      if (this.failedImages.has(recipe.id) || !recipe.imagePath) {
+        return defaultImg;
+      }
+      
+      let cleanPath = recipe.imagePath.replace(/\\/g, '/');
+      if (cleanPath.startsWith('/')) cleanPath = cleanPath.substring(1);
+      
+      if (!cleanPath.includes('images/')) {
+        cleanPath = 'images/recipes/' + cleanPath;
+      }
+
+      return baseUrl + cleanPath;
     },
-    onImgError(event) {
-      event.target.src = "https://localhost:5150/Images/default.jpg";
+    onImgError(recipeId, event) {
+      const defaultImg = "https://localhost:5150/images/recipes/default.jpg";
+      const imgTag = event.target;
+
+      // Megállítjuk az eseménykezelőt, hogy ne fusson le többször
+      imgTag.onerror = null;
+
+      // Hozzáadjuk a tiltólistához
+      this.failedImages.add(recipeId);
+
+      if (imgTag.src !== defaultImg) {
+        console.warn(`Kép hiba (ID: ${recipeId}), váltás alapértelmezettre.`);
+        imgTag.src = defaultImg;
+      } else {
+        // Ha a default is hiányzik, elrejtjük
+        imgTag.style.display = 'none';
+      }
     },
     formatIngredients(ingredients) {
       if (!ingredients || ingredients.length === 0) return 'Nincs megadva';
-      return (typeof ingredients[0] === 'string' ? ingredients : ingredients.map(i => i.name)).join(', ');
+      return ingredients.map(i => i.name).join(', ');
     },
     viewRecipe(id) {
       this.$router.push(`/recept/${id}`);
+    },
+    nextPage() {
+      if (this.page * this.pageSize < this.totalCount) this.page++;
+    },
+    prevPage() {
+      if (this.page > 1) this.page--;
     }
   }
 }
@@ -122,24 +170,80 @@ export default {
 <style scoped>
 .recipe-page { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
 .page-title { font-size: 1.75rem; font-weight: bold; margin-bottom: 20px; background: linear-gradient(to right, #FF8C00, #FFD700); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.controls-left { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
-.search-input { width: 200px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-.no-recipes { text-align: center; color: #888; margin-top: 40px; }
+
 .recipe-list { display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; }
-.recipe-card { flex: 0 0 calc(25% - 20px); min-width: 250px; height: 380px; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; border-radius: 16px; background: linear-gradient(180deg, rgba(255, 165, 0, 0.5), rgba(255, 165, 0, 0.05)); box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: transform 0.3s ease; }
-.recipe-card:hover { transform: translateY(-6px); box-shadow: 0 12px 20px rgba(0,0,0,0.2); }
-.recipe-image-wrapper { width: 100%; height: 140px; overflow: hidden; border-radius: 10px; background: white; }
-.recipe-image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-.recipe-no-image { width: 100%; height: 140px; display: flex; align-items: center; justify-content: center; background: #eee; color: #888; border-radius: 10px; }
-.recipe-title { font-weight: bold; margin: 10px 0; color: #333; }
-.ingredients-scroll { max-height: 60px; overflow-y: auto; font-size: 0.9rem; margin-bottom: 10px; }
-.author-info { font-size: 0.8rem; color: #555; margin-bottom: 10px; }
-.view-btn { background: linear-gradient(to right, #FFD700, #FF8C00); border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; color: white; font-weight: bold; }
-.pagination { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 30px; }
-.pagination button { padding: 6px 12px; border-radius: 6px; border: none; background: linear-gradient(to right, #FF8C00, #FFD700); color: white; cursor: pointer; }
-.pagination button:disabled { background: #ccc; cursor: not-allowed; }
-.fade-in { animation: fadeIn 0.5s ease forwards; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+.recipe-card { 
+  flex: 0 0 calc(25% - 20px); 
+  min-width: 250px; 
+  height: 420px; 
+  display: flex; 
+  flex-direction: column; 
+  padding: 15px; 
+  border-radius: 16px; 
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+  transition: all 0.3s ease;
+  border: 1px solid #eee;
+  overflow: hidden; /* Szigorú keret */
+}
+
+.recipe-card:hover { transform: translateY(-8px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
+
+.recipe-image-wrapper { 
+  width: 100%; 
+  height: 180px; 
+  min-height: 180px; /* Fix magasság a remegés ellen */
+  max-height: 180px;
+  overflow: hidden; 
+  border-radius: 12px; 
+  background: #f3f3f3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.recipe-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block;
+}
+
+.recipe-no-image { 
+  width: 100%; 
+  height: 100%; 
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  background: #eee; 
+  color: #888; 
+}
+
+.recipe-content { flex-grow: 1; display: flex; flex-direction: column; padding-top: 10px; }
+.recipe-title { font-size: 1.1rem; font-weight: bold; margin: 0 0 10px 0; color: #333; height: 2.4em; overflow: hidden; }
+.ingredients-scroll { max-height: 50px; overflow-y: auto; font-size: 0.85rem; color: #666; margin-bottom: 10px; }
+.author-info { font-size: 0.8rem; color: #888; margin-top: auto; padding-bottom: 10px; }
+
+.view-btn { 
+  width: 100%;
+  background: linear-gradient(to right, #FFD700, #FF8C00); 
+  border: none; 
+  padding: 10px; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  color: white; 
+  font-weight: bold; 
+}
+
+.pagination { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 40px; padding-bottom: 40px; }
+.pagination button { padding: 8px 16px; border-radius: 8px; border: none; background: #FF8C00; color: white; cursor: pointer; }
+.pagination button:disabled { background: #ccc; }
+
+.fade-in { animation: fadeIn 0.6s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+.search-input { width: 250px; padding: 10px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 20px; }
 
 @media (max-width: 1024px) { .recipe-card { flex: 0 0 calc(33.33% - 20px); } }
 @media (max-width: 768px) { .recipe-card { flex: 0 0 calc(50% - 20px); } }
