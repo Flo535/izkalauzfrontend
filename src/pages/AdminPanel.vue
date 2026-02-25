@@ -14,7 +14,6 @@
           <thead>
             <tr>
               <th>Email</th>
-              <th>Receptek</th>
               <th>Szerepkör</th>
               <th>Műveletek</th>
             </tr>
@@ -22,7 +21,6 @@
           <tbody>
             <tr v-for="user in users" :key="user.id">
               <td>{{ user.email }}</td>
-              <td>{{ user.recipeCount ?? 0 }} db</td>
               <td>
                 <select v-model="user.role" @change="updateRole(user)" class="admin-select">
                   <option value="User">User</option>
@@ -55,14 +53,14 @@
         <div v-for="recipe in pendingRecipes" :key="recipe.id" class="recipe-card">
           <div class="card-img-wrapper">
             <img :src="getImageUrl(recipe)" class="admin-img" @error="handleImgError" />
-            <span class="status-badge pending">Függőben</span>
+            <span class="status-badge pending">Jóváhagyásra vár</span>
           </div>
           <div class="info">
             <h3>{{ recipe.title }}</h3>
             <p class="author">👤 {{ recipe.authorEmail }}</p>
             <div class="btns">
-              <button @click="changeStatus(recipe.id, 'Approved')" class="btn-ok">✅ Elfogad</button>
-              <button @click="changeStatus(recipe.id, 'Rejected')" class="btn-no">❌ Elutasít</button>
+              <button @click="changeStatus(recipe.id, true)" class="btn-ok">✅ Elfogad</button>
+              <button @click="deleteRecipe(recipe.id)" class="btn-no">❌ Elutasít/Töröl</button>
             </div>
           </div>
         </div>
@@ -83,7 +81,7 @@
             <tr>
               <th>Cím</th>
               <th>Szerző</th>
-              <th>Státusz</th>
+              <th>Állapot</th>
               <th>Műveletek</th>
             </tr>
           </thead>
@@ -92,8 +90,8 @@
               <td><strong>{{ recipe.title }}</strong></td>
               <td>{{ recipe.authorEmail }}</td>
               <td>
-                <span :class="['status-text', recipe.status?.toLowerCase()]">
-                  {{ recipe.status }}
+                <span :class="['status-text', recipe.isApproved ? 'approved' : 'pending']">
+                  {{ recipe.isApproved ? 'Jóváhagyva' : 'Függőben' }}
                 </span>
               </td>
               <td class="action-cell">
@@ -111,7 +109,6 @@
 <script>
 import axios from 'axios';
 import { authState } from '@/auth.js';
-import { useRouter } from 'vue-router';
 
 export default {
   name: 'AdminPanel',
@@ -125,15 +122,12 @@ export default {
       baseUrl: 'https://localhost:5150'
     }
   },
-  setup() {
-    const router = useRouter();
-    return { router };
-  },
   computed: {
     isAdmin() { return authState.isAdmin; },
     currentEmail() { return authState.userEmail; },
+    // JAVÍTÁS: A szűrés most már az isApproved mezőt nézi (ami a Backendben is van)
     pendingRecipes() {
-      return this.allRecipes.filter(r => r.status?.toLowerCase() === "pending");
+      return this.allRecipes.filter(r => r.isApproved === false);
     },
     filteredRecipes() {
       if (!this.searchQuery) return this.allRecipes;
@@ -153,8 +147,9 @@ export default {
   methods: {
     getImageUrl(recipe) {
       if (!recipe.imagePath) return `${this.baseUrl}/images/default.jpg`;
-      const fileName = recipe.imagePath.split(/[\\/]/).pop();
-      return `${this.baseUrl}/images/recipes/${fileName}`;
+      // Ha a kép útvonala már tartalmazza a baseUrl-t, ne duplázzuk
+      if (recipe.imagePath.startsWith('http')) return recipe.imagePath;
+      return `${this.baseUrl}${recipe.imagePath}`;
     },
     handleImgError(e) { e.target.src = `${this.baseUrl}/images/default.jpg`; },
 
@@ -162,7 +157,7 @@ export default {
       this.loadingUsers = true;
       try {
         const res = await axios.get(`${this.baseUrl}/api/Users`, {
-          headers: { Authorization: `Bearer ${authState.token}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         this.users = res.data;
       } catch (err) { console.error("Admin - User hiba:", err); }
@@ -172,58 +167,64 @@ export default {
     async loadAllRecipes() {
       this.loadingRecipes = true;
       try {
-        // Fontos: Az Admin minden receptet lekér (legyen az Pending vagy Approved)
         const res = await axios.get(`${this.baseUrl}/api/admin/recipes`, {
-          headers: { Authorization: `Bearer ${authState.token}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
+        // A Backend egy listát küld vissza, amit az isApproved mezővel szűrünk a computed-ben
         this.allRecipes = res.data;
       } catch (err) { console.error("Admin - Recept hiba:", err); }
       finally { this.loadingRecipes = false; }
     },
 
-    async changeStatus(id, newStatus) {
+    async changeStatus(id, isApproved) {
       try {
-        await axios.put(`${this.baseUrl}/api/admin/recipes/${id}/status`, JSON.stringify(newStatus), {
-          headers: { 
-            Authorization: `Bearer ${authState.token}`,
-            'Content-Type': 'application/json'
+        // JAVÍTÁS: A Backendnek egy DTO-t kell küldeni (IsApproved property-vel)
+        await axios.put(`${this.baseUrl}/api/admin/recipes/${id}/status`, 
+          { isApproved: isApproved }, 
+          {
+            headers: { 
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+              'Content-Type': 'application/json'
+            }
           }
-        });
+        );
         await this.loadAllRecipes();
-      } catch (err) { alert("Hiba a művelet során."); }
+      } catch (err) { 
+        console.error(err);
+        alert("Hiba a státusz módosításakor."); 
+      }
+    },
+
+    async deleteRecipe(id) {
+      if (!confirm("Biztosan törlöd ezt a receptet?")) return;
+      try {
+        await axios.delete(`${this.baseUrl}/api/Recipes/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        await this.loadAllRecipes(); // Lista frissítése törlés után
+      } catch (err) { alert("Hiba a törlésnél."); }
     },
 
     async updateRole(user) {
       try {
         await axios.put(`${this.baseUrl}/api/Users/${user.id}/role`, { role: user.role }, {
-          headers: { Authorization: `Bearer ${authState.token}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        alert(`Sikeres módosítás: ${user.email}`);
-      } catch (err) { alert("Sikertelen módosítás."); }
+        alert(`Sikeres: ${user.email} -> ${user.role}`);
+      } catch (err) { alert("Hiba."); }
     },
 
     async deleteUser(user) {
-      if (!confirm(`Biztosan törlöd: ${user.email}? Minden receptje is törlődni fog!`)) return;
+      if (!confirm(`Törlöd: ${user.email}?`)) return;
       try {
         await axios.delete(`${this.baseUrl}/api/Users/${user.id}`, {
-          headers: { Authorization: `Bearer ${authState.token}` }
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
-        this.users = this.users.filter(u => u.id !== user.id);
-      } catch (err) { alert("Hiba a törlésnél."); }
-    },
-
-    async deleteRecipe(id) {
-      if (!confirm("Biztosan véglegesen törölni akarod ezt a receptet?")) return;
-      try {
-        await axios.delete(`${this.baseUrl}/api/Recipes/${id}`, {
-          headers: { Authorization: `Bearer ${authState.token}` }
-        });
-        this.allRecipes = this.allRecipes.filter(r => r.id !== id);
-      } catch (err) { alert("Nem sikerült törölni a receptet."); }
+        await this.loadUsers();
+      } catch (err) { alert("Hiba."); }
     },
 
     editRecipe(id) {
-      // Átirányítás a meglévő szerkesztő oldalra
       this.$router.push(`/edit-recipe/${id}`);
     }
   }
@@ -231,35 +232,25 @@ export default {
 </script>
 
 <style scoped>
-.admin-page { padding: 30px; max-width: 1200px; margin: 40px auto; }
+/* A te stílusaid maradnak, csak apróbb javítások a láthatóságért */
+.admin-page { padding: 30px; max-width: 1200px; margin: 40px auto; background: rgba(255,255,255,0.9); border-radius: 20px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-
 .table-container { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-top: 10px; }
 table { width: 100%; border-collapse: collapse; }
 th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
-th { background: #f8f9fa; font-weight: bold; }
-
+th { background: #f8f9fa; }
 .search-input { padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 300px; }
-.admin-select { padding: 5px; border-radius: 4px; }
-
-.btn-edit { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 5px; }
-.btn-delete-small { background: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
-.btn-delete-small:disabled { background: #ccc; }
-
 .status-text.approved { color: #27ae60; font-weight: bold; }
 .status-text.pending { color: #f39c12; font-weight: bold; }
-.status-text.rejected { color: #c0392b; font-weight: bold; }
-
 .recipe-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
 .recipe-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 .card-img-wrapper { height: 150px; position: relative; }
 .admin-img { width: 100%; height: 100%; object-fit: cover; }
+.status-badge.pending { position: absolute; top: 10px; right: 10px; background: #f39c12; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
 .info { padding: 15px; }
 .btns { display: flex; gap: 10px; margin-top: 10px; }
-.btn-ok { background: #2ecc71; color: white; flex: 1; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
-.btn-no { background: #e74c3c; color: white; flex: 1; border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
-
-.separator { margin: 40px 0; border: 0; border-top: 2px solid #eee; }
-.fade-in { animation: fadeIn 0.5s ease-in; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.btn-ok { background: #2ecc71; color: white; flex: 1; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+.btn-no { background: #e74c3c; color: white; flex: 1; border: none; padding: 10px; border-radius: 6px; cursor: pointer; }
+.refresh-btn { background: #3498db; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
+.btn-edit { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; margin-right: 5px; }
 </style>

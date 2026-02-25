@@ -128,4 +128,60 @@ h1, h2, h3 {
   font-family: 'Playfair Display', serif;
   font-weight: 700;
 }
+
+/* --- GLOBÁLIS LAPOZÓ (PAGINATION) STÍLUS --- */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin: 40px 0;
+  padding: 10px;
+}
+
+.page-btn {
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: rgba(255, 255, 255, 0.1); /* Finom üveghatás */
+  backdrop-filter: blur(10px);
+  color: white;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.page-btn:hover:not(:disabled) {
+  background: #ff8c00;
+  transform: translateY(-3px);
+  color: white;
+  border-color: #ffb84d;
+}
+
+.page-btn.active {
+  background: linear-gradient(135deg, #ffb84d, #ff8c00);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4);
+  border-color: #ffcc66;
+}
+
+.page-btn:disabled {
+  opacity: 0.2;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Szélesebb gomb az előző/következő nyilakhoz */
+.page-btn-long {
+  width: auto;
+  padding: 0 20px;
+  font-size: 1.2rem;
+}
 </style>

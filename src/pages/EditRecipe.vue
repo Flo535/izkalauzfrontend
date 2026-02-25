@@ -1,248 +1,157 @@
 <template>
   <div class="edit-recipe-page fade-in">
     <h2 class="page-title">✏️ Recept szerkesztése</h2>
-
+    
     <div v-if="error" class="error-message">{{ error }}</div>
     <div v-if="successMessage" class="success-message">{{ successMessage }}</div>
-    <div v-if="loading" class="loading">Betöltés...</div>
+    
+    <div v-if="loading" class="loading-box">
+      <div class="spinner"></div>
+      <p>Recept betöltése...</p>
+    </div>
 
-    <div v-if="!loading" class="recipe-container">
+    <div v-else class="recipe-container">
       <div class="left-section">
         <div class="form-group">
           <label>Recept neve:</label>
-          <input 
-            v-model="recipe.title" 
-            placeholder="Recept címe" 
-            class="input-field"
-          />
+          <input v-model="recipe.title" class="input-field" placeholder="Pl. Marhapörkölt"/>
         </div>
-
+        
         <div class="form-group">
           <label>Kategória:</label>
           <select v-model="recipe.category" class="select-field">
-            <option disabled value="">Válassz kategóriát</option>
             <option>Leves</option>
             <option>Főétel</option>
             <option>Desszert</option>
+            <option>Egyéb</option>
           </select>
         </div>
 
         <div class="form-group">
           <label>Rövid leírás:</label>
-          <textarea 
-            v-model="recipe.description" 
-            placeholder="Rövid leírás az ételről"
-            class="textarea-field short"
-          ></textarea>
+          <textarea v-model="recipe.description" class="textarea-field short"></textarea>
         </div>
 
         <div class="form-group">
           <label>Elkészítés menete:</label>
-          <textarea 
-            v-model="recipe.howToText" 
-            placeholder="Lépésről lépésre..."
-            class="textarea-field tall"
-          ></textarea>
+          <textarea v-model="recipe.howToText" class="textarea-field tall"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Fotó cseréje:</label>
+          <input type="file" @change="onFileChange" accept="image/*" class="file-input" />
         </div>
       </div>
 
       <div class="right-section">
         <div class="ingredients-header">
-          <h3 class="section-title">Hozzávalók</h3>
-          <button @click="addIngredient" class="add-btn">
-            ➕ Hozzáadás
-          </button>
+          <h3>Hozzávalók</h3>
+          <button @click="addIngredient" class="add-btn" title="Új hozzávaló">➕</button>
         </div>
-
+        
         <div class="ingredients-list">
-          <div 
-            v-for="(ingredient, index) in ingredients" 
-            :key="index"
-            class="ingredient-row"
-          >
-            <input
-              v-model="ingredient.name"
-              placeholder="Név"
-              class="input-field ingredient-name"
-            />
-            
-            <input
-              v-model="ingredient.quantity"
-              placeholder="Menny."
-              class="input-field ingredient-quantity"
-              @input="sanitizeQuantity(ingredient)"
-            />
-            
-            <select v-model="ingredient.unit" class="select-field ingredient-unit">
-              <option v-for="(unit, i) in units" :key="i" :value="unit">
-                {{ unit }}
-              </option>
+          <div v-for="(ing, idx) in ingredients" :key="idx" class="ingredient-row">
+            <input v-model="ing.name" placeholder="Név" class="ing-name"/>
+            <input v-model="ing.quantity" placeholder="Menny." class="ing-qty"/>
+            <select v-model="ing.unit" class="ing-unit">
+              <option v-for="u in units" :key="u">{{u}}</option>
             </select>
-            
-            <button 
-              @click="removeIngredient(index)" 
-              class="remove-btn"
-              title="Törlés"
-            >
-              ✕
-            </button>
-          </div>
-
-          <div v-if="ingredients.length === 0" class="empty-state">
-            Még nincsenek hozzávalók.
+            <button @click="removeIngredient(idx)" class="remove-btn">✕</button>
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="!loading" class="form-buttons">
-      <button @click="cancel" class="cancel-btn">Mégse</button>
-      <button @click="saveRecipe" class="save-btn">💾 Mentés</button>
+    <div v-if="!loading" class="action-bar">
+      <button @click="goBack" class="btn-secondary">🔙 Mégse / Vissza</button>
+      <button @click="saveRecipe" class="btn-primary" :disabled="saving">
+        {{ saving ? '⌛ Mentés...' : '💾 Módosítások mentése' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
-import { authState } from '@/auth.js' // Nagyon fontos az isAdmin ellenőrzéséhez!
-
-const API_BASE = 'https://localhost:5150/api'
+import { authState } from '@/auth.js'
 
 export default {
-  name: 'EditRecipe',
   data() {
     return {
-      recipe: {
-        id: '',
-        title: '',
-        category: '',
-        description: '',
-        howToText: '',
-        authorEmail: '', // Ezt is tároljuk a mentéshez
-        status: ''
-      },
+      recipe: { id: '', title: '', category: '', description: '', howToText: '', imagePath: '' },
       ingredients: [],
+      imageFile: null,
       units: ['g', 'dkg', 'kg', 'ml', 'dl', 'l', 'db', 'kk', 'tk', 'ek', 'csipet'],
+      loading: true,
+      saving: false,
       error: null,
-      successMessage: null,
-      loading: true
+      successMessage: null
     }
   },
-
-  computed: {
-    isAdmin() {
-      return authState.isAdmin;
-    }
-  },
-
   async mounted() {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      this.$router.push('/login')
-      return
-    }
-    await this.loadRecipe()
+    await this.fetchRecipe();
   },
-
   methods: {
-    async loadRecipe() {
-      const id = this.$route.params.id
-      const token = localStorage.getItem('token')
-
+    async fetchRecipe() {
       try {
-        const res = await axios.get(`${API_BASE}/Recipes/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-
-        // Adatok feltöltése a válaszból
-        this.recipe = {
-          id: res.data.id,
-          title: res.data.title,
-          category: res.data.category,
-          description: res.data.description,
-          howToText: res.data.howToText,
-          authorEmail: res.data.authorEmail,
-          status: res.data.status
-        }
-
-        if (res.data.ingredients) {
-          this.ingredients = res.data.ingredients.map(ing => ({
-            name: ing.name,
-            quantity: ing.quantity.toString(),
-            unit: ing.unit
-          }))
-        }
-
-        this.loading = false
+        const id = this.$route.params.id;
+        const res = await axios.get(`https://localhost:5150/api/Recipes/${id}`);
+        this.recipe = res.data;
+        this.ingredients = (res.data.ingredients || []).map(i => ({
+          ...i,
+          quantity: i.quantity ? i.quantity.toString() : ''
+        }));
       } catch (err) {
-        this.error = 'Hiba a recept betöltésekor. Lehet, hogy nincs jogosultságod?'
-        this.loading = false
+        this.error = "Nem sikerült betölteni a receptet.";
+      } finally {
+        this.loading = false;
       }
     },
-
-    addIngredient() {
-      this.ingredients.push({ name: '', quantity: '', unit: 'g' })
+    onFileChange(e) { this.imageFile = e.target.files[0]; },
+    addIngredient() { this.ingredients.push({ name: '', quantity: '', unit: 'g' }); },
+    removeIngredient(idx) { this.ingredients.splice(idx, 1); },
+    goBack() {
+      // Visszaviszünk az admin főoldalra, ahol a listák vannak
+      this.$router.push('/admin'); 
     },
-
-    removeIngredient(index) {
-      this.ingredients.splice(index, 1)
-    },
-
-    sanitizeQuantity(ingredient) {
-      ingredient.quantity = ingredient.quantity.replace(/[^0-9.,]/g, '')
-    },
-
-    cancel() {
-      // Ha az Admin panelről jött, oda megy vissza
-      if (this.isAdmin) {
-        this.$router.push('/admin')
-      } else {
-        this.$router.push('/profile')
-      }
-    },
-
     async saveRecipe() {
-      this.error = null
-      this.successMessage = null
-      const token = localStorage.getItem('token')
-
-      // Alap validálás
-      if (!this.recipe.title.trim() || !this.recipe.category || this.ingredients.length === 0) {
-        this.error = 'Kérlek tölts ki minden kötelező mezőt és adj meg hozzávalókat!'
-        return
-      }
-
+      this.saving = true;
+      this.error = null;
       try {
-        const payload = {
-          id: this.recipe.id,
-          title: this.recipe.title,
-          category: this.recipe.category,
-          description: this.recipe.description,
-          howToText: this.recipe.howToText,
-          authorEmail: this.recipe.authorEmail, // Megtartjuk az eredeti szerzőt
-          status: this.isAdmin ? this.recipe.status : 'Pending', // Admin mentésekor marad a státusz, Usernél újra jóváhagyandó lesz
-          ingredients: this.ingredients.map(ing => ({
-            name: ing.name.trim(),
-            quantity: parseFloat(ing.quantity.replace(',', '.')),
-            unit: ing.unit
-          }))
-        }
-
-        await axios.put(
-          `${API_BASE}/Recipes/${payload.id}`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        )
-
-        this.successMessage = '🎉 Recept sikeresen frissítve!'
+        const token = localStorage.getItem('token') || localStorage.getItem('jwt');
+        const formData = new FormData();
         
-        setTimeout(() => {
-          this.cancel()
-        }, 1500)
+        formData.append('title', this.recipe.title);
+        formData.append('category', this.recipe.category);
+        formData.append('description', this.recipe.description);
+        formData.append('howToText', this.recipe.howToText);
 
+        const cleanedIngs = this.ingredients
+          .filter(i => i.name.trim() !== '')
+          .map(i => ({
+            name: i.name,
+            quantity: parseFloat(i.quantity.toString().replace(',', '.')) || 0,
+            unit: i.unit
+          }));
+        formData.append('ingredientsJson', JSON.stringify(cleanedIngs));
+
+        if (this.imageFile) formData.append('image', this.imageFile);
+
+        await axios.put(`https://localhost:5150/api/Recipes/${this.recipe.id}`, formData, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data' 
+          }
+        });
+
+        this.successMessage = "✅ Recept sikeresen frissítve!";
+        // 2 másodperc múlva visszairányítunk az adminra
+        setTimeout(() => this.goBack(), 2000);
       } catch (err) {
-        console.error('Mentési hiba:', err)
-        this.error = err.response?.data || 'Nem sikerült a mentés. Nincs jogosultságod?'
+        this.error = "Szerver hiba a mentés során.";
+        console.error(err);
+      } finally {
+        this.saving = false;
       }
     }
   }
@@ -250,23 +159,23 @@ export default {
 </script>
 
 <style scoped>
-/* A stílus megegyezik a korábbiakkal a konzisztencia miatt */
-.edit-recipe-page { max-width: 1200px; margin: 40px auto; padding: 20px; }
-.recipe-container { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-.left-section, .right-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-
-.form-group { margin-bottom: 15px; }
-.input-field, .select-field, .textarea-field { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; margin-top: 5px; }
-.textarea-field.tall { min-height: 200px; }
-
-.ingredient-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; margin-bottom: 10px; }
-.remove-btn { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
-.add-btn { background: #2ecc71; color: white; border: none; padding: 8px 15px; border-radius: 8px; cursor: pointer; }
-
-.form-buttons { display: flex; justify-content: flex-end; gap: 15px; margin-top: 20px; }
-.save-btn { background: #e67e22; color: white; padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.cancel-btn { background: #95a5a6; color: white; padding: 12px 25px; border: none; border-radius: 8px; cursor: pointer; }
-
-.error-message { background: #ffeded; color: #d63031; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-.success-message { background: #e8f5e9; color: #2e7d32; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+.edit-recipe-page { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+.recipe-container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+.left-section, .right-section { background: white; padding: 25px; border-radius: 12px; border: 1px solid #eee; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
+.input-field, .select-field, .textarea-field { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+.textarea-field.short { height: 80px; }
+.textarea-field.tall { height: 250px; }
+.ingredient-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.ing-name { flex: 3; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+.ing-qty { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+.ing-unit { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
+.action-bar { margin-top: 30px; display: flex; justify-content: center; gap: 20px; }
+.btn-primary { background: #27ae60; color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
+.btn-secondary { background: #7f8c8d; color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; }
+.error-message { color: #e74c3c; background: #fdf2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+.success-message { color: #27ae60; background: #f2fdf5; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
+.remove-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px; }
+.add-btn { background: #3498db; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
 </style>
