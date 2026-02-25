@@ -85,14 +85,13 @@
       </div>
 
       <div class="footer-actions">
-         <button @click="$router.push('/')" class="secondary-btn">← Vissza a böngészéshez</button>
+         <button @click="$router.go(-1)" class="secondary-btn">← Vissza az előző oldalra</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// ... (A script rész marad a tiéd, mert az tökéletesen működik! Csak a JWT dekódolást és az útvonalakat tartsd meg)
 import * as jwtDecodeModule from 'jwt-decode';
 
 export default {
@@ -188,7 +187,6 @@ export default {
   padding: 0 20px;
 }
 
-/* Glassmorphism alap kártya */
 .glass-card {
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(12px);
@@ -198,7 +196,6 @@ export default {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
 }
 
-/* HEADER ÉS KÉP */
 .recipe-header {
   position: relative;
   margin-bottom: 30px;
@@ -240,7 +237,6 @@ export default {
   margin: 0;
 }
 
-/* INFO BAR */
 .recipe-meta-bar {
   display: flex;
   justify-content: space-around;
@@ -275,7 +271,6 @@ export default {
   color: #2c3e50;
 }
 
-/* GRID ELRENDEZÉS */
 .recipe-grid {
   display: grid;
   grid-template-columns: 350px 1fr;
@@ -297,7 +292,6 @@ h2 {
 
 .title-icon { color: #ff8c00; }
 
-/* HOZZÁVALÓK LISTA */
 .ingredients-list {
   list-style: none;
   padding: 0;
@@ -320,7 +314,6 @@ h2 {
   flex-shrink: 0;
 }
 
-/* ELKÉSZÍTÉS SZÖVEG */
 .method-text {
   line-height: 1.8;
   white-space: pre-wrap;
@@ -328,7 +321,6 @@ h2 {
   font-size: 1.1rem;
 }
 
-/* FELTÖLTÉS MODAL-SZERŰ SÁV */
 .upload-bar {
   position: absolute;
   top: 20px;
@@ -350,7 +342,6 @@ h2 {
 
 .upload-action-btn:hover { transform: scale(1.05); }
 
-/* GOMBOK */
 .secondary-btn {
   background: none;
   border: 2px solid #ff8c00;
@@ -360,16 +351,20 @@ h2 {
   font-weight: bold;
   cursor: pointer;
   margin-top: 30px;
+  transition: all 0.3s;
 }
 
-/* ANIMÁCIÓK */
+.secondary-btn:hover {
+  background: #ff8c00;
+  color: white;
+}
+
 .fade-in { animation: fadeIn 0.8s ease-out; }
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* MOBIL NÉZET */
 @media (max-width: 900px) {
   .recipe-grid { grid-template-columns: 1fr; }
   .recipe-title-overlay { font-size: 2.2rem; }

@@ -3,7 +3,12 @@
     <h2 class="page-title">Receptek</h2>
 
     <div class="controls-left">
-      <input v-model="searchTerm" @input="page = 1" placeholder="Keresés a receptek között" class="search-input" />
+      <input 
+        v-model="searchTerm" 
+        @input="page = 1; localStorage.setItem('lastRecipePage', 1);" 
+        placeholder="Keresés a receptek között" 
+        class="search-input" 
+      />
     </div>
 
     <div v-if="error" class="error-message">{{ error }}</div>
@@ -68,16 +73,17 @@ export default {
   name: 'Recipes',
   data() {
     return {
-      allRecipes: [], // Ide töltjük be az összeset egyszerre
+      allRecipes: [],
       searchTerm: '',
       error: null,
-      page: 1,
+      // Itt nézzük meg, hol tartottunk legutóbb
+      page: parseInt(localStorage.getItem('lastRecipePage')) || 1,
       pageSize: 8,
-      failedImages: new Set()
+      failedImages: new Set(),
+      localStorage: window.localStorage // Hogy a template-ből is elérjük
     }
   },
   computed: {
-    // 1. Először szűrünk a kereső alapján
     filteredRecipes() {
       if (!this.searchTerm) return this.allRecipes;
       const q = this.searchTerm.toLowerCase();
@@ -85,11 +91,9 @@ export default {
         r.title && r.title.toLowerCase().includes(q)
       );
     },
-    // 2. Kiszámoljuk az oldalak számát a szűrt listából
     totalPages() {
       return Math.ceil(this.filteredRecipes.length / this.pageSize);
     },
-    // 3. Kivágjuk az aktuális 8 receptet
     paginatedRecipes() {
       const start = (this.page - 1) * this.pageSize;
       return this.filteredRecipes.slice(start, start + this.pageSize);
@@ -97,13 +101,15 @@ export default {
   },
   async mounted() {
     await this.fetchRecipes();
+    // Biztonsági ellenőrzés: ha az elmentett oldal érvénytelen lenne (pl. szűrés után)
+    if (this.page > this.totalPages && this.totalPages > 0) {
+      this.page = 1;
+    }
   },
   methods: {
     async fetchRecipes() {
       try {
-        // Lehívjuk az ÖSSZES receptet (nem küldünk page paramétert)
         const res = await axios.get(`https://localhost:5150/api/Recipes`);
-        // Ha a backend listát küld, az res.data lesz, ha objektumot, akkor res.data.items
         this.allRecipes = Array.isArray(res.data) ? res.data : (res.data.items || []);
       } catch (err) { 
         this.error = "Hiba a receptek lekérésekor."; 
@@ -127,9 +133,13 @@ export default {
       if (!ingredients || ingredients.length === 0) return 'Nincs megadva';
       return ingredients.map(i => i.name).join(', ');
     },
-    viewRecipe(id) { this.$router.push(`/recept/${id}`); },
+    viewRecipe(id) { 
+      this.$router.push(`/recept/${id}`); 
+    },
     goToPage(p) {
       this.page = p;
+      // Itt mentjük el az oldalszámot
+      localStorage.setItem('lastRecipePage', p);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     nextPage() { if (this.page < this.totalPages) this.goToPage(this.page + 1); },
@@ -139,7 +149,6 @@ export default {
 </script>
 
 <style scoped>
-/* A stílusok maradnak a régiek, az App.vue-ból jön a pagination */
 .recipe-page { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
 .page-title { font-size: 1.75rem; font-weight: bold; margin-bottom: 20px; background: linear-gradient(to right, #FF8C00, #FFD700); -webkit-background-clip: text; background-clip: text; color: transparent; }
 .recipe-list { display: flex; flex-wrap: wrap; gap: 20px; justify-content: flex-start; }
