@@ -110,13 +110,21 @@ export default {
     onFileChange(e) { this.imageFile = e.target.files[0]; },
     addIngredient() { this.ingredients.push({ name: '', quantity: '', unit: 'g' }); },
     removeIngredient(idx) { this.ingredients.splice(idx, 1); },
+    
+    // OKOS VISSZALÉPÉS: Megnézzük, ki szerkeszt.
     goBack() {
-      // Visszaviszünk az admin főoldalra, ahol a listák vannak
-      this.$router.push('/admin'); 
+      if (authState.role === 'Admin') {
+        this.$router.push('/admin'); 
+      } else {
+        this.$router.push('/'); // Sima júzer menjen a főoldalra
+      }
     },
+
     async saveRecipe() {
       this.saving = true;
       this.error = null;
+      this.successMessage = null;
+      
       try {
         const token = localStorage.getItem('token') || localStorage.getItem('jwt');
         const formData = new FormData();
@@ -144,11 +152,13 @@ export default {
           }
         });
 
-        this.successMessage = "✅ Recept sikeresen frissítve!";
-        // 2 másodperc múlva visszairányítunk az adminra
+        // Átírt barátságos üzenet
+        this.successMessage = "✅ Módosítások elmentve! A recept az admin jóváhagyása után jelenik meg újra.";
+        
+        // 2 másodperc várakozás, hogy lássa az üzenetet, majd irányítás
         setTimeout(() => this.goBack(), 2000);
       } catch (err) {
-        this.error = "Szerver hiba a mentés során.";
+        this.error = "Hiba történt a mentés során. Kérlek, ellenőrizd az adatokat.";
         console.error(err);
       } finally {
         this.saving = false;
@@ -161,21 +171,24 @@ export default {
 <style scoped>
 .edit-recipe-page { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
 .recipe-container { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-.left-section, .right-section { background: white; padding: 25px; border-radius: 12px; border: 1px solid #eee; }
+.left-section, .right-section { background: white; padding: 25px; border-radius: 12px; border: 1px solid #eee; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
-.input-field, .select-field, .textarea-field { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; }
+.input-field, .select-field, .textarea-field { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; }
 .textarea-field.short { height: 80px; }
-.textarea-field.tall { height: 250px; }
-.ingredient-row { display: flex; gap: 10px; margin-bottom: 10px; }
-.ing-name { flex: 3; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
-.ing-qty { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
-.ing-unit { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 5px; }
-.action-bar { margin-top: 30px; display: flex; justify-content: center; gap: 20px; }
-.btn-primary { background: #27ae60; color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
-.btn-secondary { background: #7f8c8d; color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; }
-.error-message { color: #e74c3c; background: #fdf2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
-.success-message { color: #27ae60; background: #f2fdf5; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; }
-.remove-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px; }
-.add-btn { background: #3498db; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; }
+.textarea-field.tall { height: 250px; resize: vertical; }
+.ingredient-row { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+.ing-name { flex: 3; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.ing-qty { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.ing-unit { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+.action-bar { margin-top: 30px; display: flex; justify-content: center; gap: 20px; padding-bottom: 50px; }
+.btn-primary { background: linear-gradient(to right, #27ae60, #2ecc71); color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; transition: transform 0.2s; }
+.btn-primary:hover:not(:disabled) { transform: scale(1.05); }
+.btn-secondary { background: #7f8c8d; color: white; padding: 15px 40px; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+.error-message { color: #e74c3c; background: #fdf2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; border: 1px solid #fab1a0; }
+.success-message { color: #27ae60; background: #f2fdf5; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; border: 1px solid #b2f2bb; }
+.remove-btn { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 18px; padding: 5px; }
+.add-btn { background: #3498db; color: white; border: none; width: 35px; height: 35px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+.spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
