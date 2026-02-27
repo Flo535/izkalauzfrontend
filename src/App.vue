@@ -4,11 +4,13 @@
     
     <div class="app-main">
       <SidebarLayout>
-        <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <div class="main-content-stabilizer">
+          <router-view v-slot="{ Component }">
+            <transition name="fade" mode="out-in">
+              <component :is="Component" :key="$route.path" />
+            </transition>
+          </router-view>
+        </div>
       </SidebarLayout>
     </div>
   </div>
@@ -28,70 +30,45 @@ export default {
 </script>
 
 <style>
-/* Betűtípusok: Poppins a szövegnek, Playfair Display a címeknek */
+/* 1. ALAPOK ÉS BETŰTÍPUSOK */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap');
 
-/* Alapbeállítások a teljes oldalra */
 html, body, #app {
   margin: 0;
   padding: 0;
   min-height: 100vh;
   font-family: 'Poppins', sans-serif;
   
-  /* A közös háttérkép beállítása */
+  /* Háttérkép rögzítése */
   background-image: url('/src/assets/background-photo.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   background-repeat: no-repeat;
   
-  /* Simább görgetés */
+  /* Mindig kényszerített görgetősáv a vízszintes ugrálás ellen */
+  overflow-y: scroll;
   scroll-behavior: smooth;
   color: #2c3e50;
 }
 
-/* Fő tartály az oldalsáv és a tartalom számára */
 .app-main {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* Egy leheletnyi sötétítés a háttérképen, hogy az üveghatás jobban érvényesüljön */
-  background: rgba(0, 0, 0, 0.15); 
+  background: rgba(0, 0, 0, 0.15); /* Finom sötétítés az üveghatásért */
 }
 
-/* --- GLOBÁLIS NARANCSSÁRGA GÖRGETŐSÁV (SCROLLBAR) --- */
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: #ff8c00 rgba(255, 255, 255, 0.1);
+/* 2. STABILIZÁLÓ RÉTEG (Nem látszik, de fogja a tartalmat) */
+.main-content-stabilizer {
+  flex: 1;
+  width: 100%;
+  min-height: 85vh;
+  position: relative;
+  contain: layout; /* Ez gátolja a remegést */
 }
 
-/* Chrome, Safari, Edge */
-*::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 10px;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ffb84d, #ff8c00); 
-  border-radius: 10px;
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  box-shadow: inset 0 0 6px rgba(0,0,0,0.1);
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #ffcc66, #ffa500);
-}
-
-/* --- ANIMÁCIÓK --- */
-
-/* Oldalváltási effekt (Fade) */
+/* 3. ANIMÁCIÓK - Visszatért a finom mozgás */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -107,30 +84,33 @@ html, body, #app {
   transform: translateY(-10px);
 }
 
-/* --- BETÖLTÉSI ÁLLAPOT --- */
-body.loading::after {
-  content: 'Ízek betöltése...';
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.8);
-  color: #ff8c00;
-  font-family: 'Playfair Display', serif;
-  font-size: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  backdrop-filter: blur(15px);
+/* 4. GLOBÁLIS KÁRTYA STÍLUS ÉS LEBEGÉS (Uniform méretek) */
+.recipe-card {
+  background: white;
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease !important;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  cursor: pointer;
 }
 
-/* Közös címsor stílus az egész appban */
-h1, h2, h3 {
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
+.recipe-card:hover {
+  transform: translateY(-8px) scale(1.02); /* Finom lebegés és pici nagyítás */
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2) !important;
 }
 
-/* --- GLOBÁLIS LAPOZÓ (PAGINATION) STÍLUS --- */
+/* 5. NARANCSSÁRGA GÖRGETŐSÁV */
+*::-webkit-scrollbar { width: 10px; }
+*::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.1); border-radius: 10px; }
+*::-webkit-scrollbar-thumb { 
+  background: linear-gradient(180deg, #ffb84d, #ff8c00); 
+  border-radius: 10px; 
+}
 
+h1, h2, h3 { font-family: 'Playfair Display', serif; font-weight: 700; }
+
+/* 6. GLOBÁLIS LAPOZÓ (PAGINATION) - Visszaállítva a szép dizájn */
 .pagination {
   display: flex;
   justify-content: center;
@@ -147,7 +127,7 @@ h1, h2, h3 {
   align-items: center;
   justify-content: center;
   border: none;
-  background: rgba(255, 255, 255, 0.1); /* Finom üveghatás */
+  background: rgba(255, 255, 255, 0.1); 
   backdrop-filter: blur(10px);
   color: white;
   border-radius: 12px;
@@ -175,13 +155,11 @@ h1, h2, h3 {
 .page-btn:disabled {
   opacity: 0.2;
   cursor: not-allowed;
-  transform: none;
 }
 
-/* Szélesebb gomb az előző/következő nyilakhoz */
 .page-btn-long {
   width: auto;
   padding: 0 20px;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
 }
 </style>

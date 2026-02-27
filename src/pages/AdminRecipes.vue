@@ -5,27 +5,37 @@
       <button @click="fetchPending" class="fix-btn">🔄 Frissítés</button>
     </div>
 
-    <div v-if="loading">⏳ Betöltés...</div>
+    <div v-if="loading" class="status-msg">⏳ Betöltés...</div>
     <div v-if="error" class="error">{{ error }}</div>
 
     <div v-if="recipes.length === 0 && !loading" class="no-pending">
       <p>Nincs több jóváhagyásra váró recept. ✨</p>
     </div>
 
-    <div v-for="recipe in recipes" :key="recipe.id" class="recipe-card">
-      <h3>{{ recipe.title }}</h3>
-      <p>{{ recipe.description }}</p>
+    <div class="admin-grid">
+      <div v-for="recipe in recipes" :key="recipe.id" class="recipe-card">
+        
+        <div class="recipe-image-wrapper">
+          <img 
+            :src="fullImagePath(recipe.imagePath)" 
+            @load="onImgLoad"
+            @error="onImgError"
+            class="admin-img"
+          />
+        </div>
 
-      <div class="recipe-image-wrapper">
-        <img v-if="recipe.imagePath" :src="fullImagePath(recipe.imagePath)" />
-        <div v-else class="recipe-no-image">Nincs kép</div>
-      </div>
+        <div class="card-body">
+          <h3 class="recipe-title">{{ recipe.title }}</h3>
+          
+          <p class="recipe-desc">{{ recipe.description || 'Nincs leírás.' }}</p>
 
-      <p>Beküldő: <strong>{{ recipe.authorEmail || 'Ismeretlen' }}</strong></p>
+          <p class="author">Beküldő: <strong>{{ recipe.authorEmail || 'Ismeretlen' }}</strong></p>
 
-      <div class="buttons">
-        <button @click="updateStatus(recipe.id, true)" class="approve-btn">✅ Jóváhagy</button>
-        <button @click="updateStatus(recipe.id, false)" class="reject-btn">❌ Elutasít</button>
+          <div class="buttons">
+            <button @click="updateStatus(recipe.id, true)" class="approve-btn">✅ Jóváhagy</button>
+            <button @click="updateStatus(recipe.id, false)" class="reject-btn">❌ Elutasít</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -48,48 +58,60 @@ export default {
   },
   methods: {
     fullImagePath(path) {
-      if (!path) return null
-      const cleanPath = path.replace(/\\/g, '/')
-      // Ha a path már tartalmazza a /images-t, ne duplázzuk
-      return `https://localhost:5150${cleanPath.startsWith('/') ? '' : '/'}${cleanPath}`
+      // Ha üres az útvonal, azonnal a defaultot adjuk a villogás ellen
+      if (!path || path === "null" || path.trim() === "") {
+        return "https://localhost:5150/Images/default.jpg";
+      }
+      const fileName = path.split(/[\\/]/).pop();
+      return `https://localhost:5150/Images/${fileName}`;
+    },
+    onImgLoad(e) {
+      e.target.classList.add('is-loaded');
+    },
+    onImgError(e) {
+      if (e.target.src !== "https://localhost:5150/Images/default.jpg") {
+        e.target.src = "https://localhost:5150/Images/default.jpg";
+      }
     },
     getAuthConfig() {
-      // A bejelentkezésnél használt token neve (lehet 'jwt' vagy 'token')
       const token = localStorage.getItem('jwt') || localStorage.getItem('token');
-      if (!token) return null
-      return { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
+      if (!token) return null;
+      return { headers: { Authorization: `Bearer ${token}` } };
     },
     async fetchPending() {
-      this.loading = true
-      this.error = null
+      this.loading = true;
+      this.error = null;
       try {
-        const config = this.getAuthConfig()
-        if (!config) throw new Error('Nem vagy bejelentkezve.')
-
-        // JAVÍTVA: Az admin végpontot hívjuk
-        const res = await axios.get('https://localhost:5150/api/admin/recipes/pending', config)
-        this.recipes = res.data || []
+        const config = this.getAuthConfig();
+        if (!config) throw new Error('Nem vagy bejelentkezve.');
+        const res = await axios.get('https://localhost:5150/api/admin/recipes/pending', config);
+        this.recipes = res.data || [];
       } catch (err) {
-        this.error = "Nincs jóváhagyásra váró recept vagy hiba történt."
-        console.error(err)
-        this.recipes = []
+        this.error = "Nincs több jóváhagyásra váró recept.";
+        this.recipes = [];
       } finally {
-        this.loading = false
+        this.loading = false;
       }
     },
     async updateStatus(id, isApproved) {
+      const config = this.getAuthConfig();
+      if (!config) return;
+
       try {
-        const config = this.getAuthConfig()
-        // JAVÍTVA: Az új status frissítő végpontot hívjuk
-        await axios.put(`https://localhost:5150/api/admin/recipes/${id}/status`, 
-          { isApproved: isApproved }, 
-          config
-        )
-        
-        this.recipes = this.recipes.filter(r => r.id !== id)
-        alert(isApproved ? 'Recept sikeresen jóváhagyva!' : 'Recept elutasítva (státusz frissítve).')
+        if (isApproved) {
+          await axios.put(`https://localhost:5150/api/admin/recipes/${id}/status`, { isApproved: true }, config);
+          alert('Recept jóváhagyva!');
+        } else {
+          if (confirm("Biztosan elutasítod és véglegesen törlöd ezt a receptet?")) {
+            await axios.delete(`https://localhost:5150/api/recipes/${id}`, config);
+            alert('Recept törölve!');
+          } else {
+            return;
+          }
+        }
+        this.recipes = this.recipes.filter(r => r.id !== id);
       } catch (err) {
-        alert('Hiba történt: ' + (err.response?.data || err.message))
+        alert('Hiba történt: ' + (err.response?.data || err.message));
       }
     }
   }
@@ -97,22 +119,81 @@ export default {
 </script>
 
 <style scoped>
-.admin-page { max-width: 800px; margin: 40px auto; padding: 20px; font-family: sans-serif; }
-.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.recipe-card { border: none; padding: 20px; margin-bottom: 20px; border-radius: 15px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-.recipe-image-wrapper { width: 100%; height: 250px; overflow: hidden; border-radius: 10px; margin: 10px 0; background: #eee; display: flex; align-items: center; justify-content: center; }
-.recipe-image-wrapper img { width: 100%; height: 100%; object-fit: cover; }
-.no-pending { text-align: center; padding: 40px; color: #666; font-style: italic; border: 2px dashed #ddd; border-radius: 15px; }
-.error { color: #e74c3c; background: #fdeaea; padding: 10px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+.admin-page { max-width: 1000px; margin: 40px auto; padding: 20px; font-family: sans-serif; }
+.header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
 
-.buttons { display: flex; gap: 10px; margin-top: 15px; }
-button { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+/* Grid elrendezés a fix kártyaméretekért */
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 25px;
+}
 
-.approve-btn { background: #2ecc71; color: white; flex: 1; }
-.reject-btn { background: #e74c3c; color: white; flex: 1; }
-.fix-btn { background: #3498db; color: white; }
+.recipe-card { 
+  background: white; 
+  border-radius: 15px; 
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 520px; /* FIX MAGASSÁG: Minden kártya egyforma marad */
+}
 
-button:hover { opacity: 0.8; transform: translateY(-2px); }
-.fade-in { animation: fadeIn 0.5s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+/* FIX KÉPKERET A REMEGÉS ELLEN */
+.recipe-image-wrapper { 
+  width: 100%; 
+  height: 220px; 
+  min-height: 220px;
+  background: #f0f0f0; 
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.admin-img { 
+  width: 100%; 
+  height: 100%; 
+  object-fit: cover; 
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.admin-img.is-loaded { opacity: 1; }
+
+.card-body { padding: 20px; display: flex; flex-direction: column; flex-grow: 1; }
+
+.recipe-title { 
+  font-size: 1.2rem; 
+  margin: 0 0 10px 0; 
+  height: 2.8rem; /* Fix 2 sor */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4rem;
+}
+
+.recipe-desc { 
+  font-size: 0.9rem; 
+  color: #666; 
+  height: 3rem; /* Fix magasság a leírásnak */
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.author { font-size: 0.85rem; margin-bottom: 15px; }
+
+.buttons { display: flex; gap: 10px; margin-top: auto; }
+
+button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; flex: 1; }
+.approve-btn { background: #2ecc71; color: white; }
+.approve-btn:hover { background: #27ae60; }
+.reject-btn { background: #e74c3c; color: white; }
+.reject-btn:hover { background: #c0392b; }
+.fix-btn { background: #3498db; color: white; padding: 10px 20px; }
+
+.error { color: #e74c3c; text-align: center; margin-bottom: 20px; font-weight: bold; }
+.status-msg { text-align: center; padding: 20px; }
+.no-pending { text-align: center; padding: 40px; color: #666; border: 2px dashed #ddd; border-radius: 15px; grid-column: 1 / -1; }
 </style>
